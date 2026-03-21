@@ -9,3 +9,5 @@ export interface Diet {
   endDate: string;
   days: DietDay[];
 }
+
+export type { DietDay };

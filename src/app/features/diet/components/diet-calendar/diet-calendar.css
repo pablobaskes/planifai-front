@@ -1,0 +1,79 @@
+.calendar-container {
+  padding: 24px;
+  font-family: sans-serif;
+}
+
+.calendar-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.calendar-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.calendar-header button {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.calendar-header button:hover {
+  background: #f0f0f0;
+}
+
+.calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.calendar-table th,
+.calendar-table td {
+  border: 1px solid #e0e0e0;
+  padding: 12px;
+  text-align: center;
+  min-width: 120px;
+}
+
+.calendar-table th {
+  background: #f8f8f8;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.meal-label {
+  font-weight: 600;
+  background: #f8f8f8;
+  text-align: left !important;
+  white-space: nowrap;
+}
+
+.meal-cell {
+  cursor: pointer;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.meal-cell:hover {
+  background: #f0f7ff;
+}
+
+.meal-col {
+  width: 120px;
+}
+
+.loading, .error, .empty {
+  padding: 32px;
+  text-align: center;
+  color: #666;
+}
+
+.error {
+  color: #e53935;
+}

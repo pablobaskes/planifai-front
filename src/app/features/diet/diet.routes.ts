@@ -5,7 +5,7 @@ import { RecipeListPage } from "./pages/recipe-list-page/recipe-list-page";
 
 export const DIET_ROUTES: Routes = [
   {
-    path: '',
+    path: 'calendar',
     component: DietCalendarPage
   },
   {
