@@ -6,5 +6,5 @@ export interface Recipe {
   nutritionSummary: NutritionSummary;
   tags: string[];
   servings: number;
-  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
+  mealType?: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK';
 }

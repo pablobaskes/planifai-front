@@ -1,9 +1,9 @@
 <div class="calendar-container">
 
   <div class="calendar-header">
-    <button (click)="prevWeek()">‹</button>
+    <button type="button" (click)="prevWeek()">&lt;</button>
     <h2>{{ weekRangeLabel }}</h2>
-    <button (click)="nextWeek()">›</button>
+    <button type="button" (click)="nextWeek()">&gt;</button>
   </div>
 
   @if (loading) {
@@ -19,6 +19,10 @@
   }
 
   @if (!loading && diet) {
+    @if (overrideError) {
+      <div class="error">{{ overrideError }}</div>
+    }
+
     <table class="calendar-table">
       <thead>
         <tr>
@@ -33,12 +37,49 @@
           <tr>
             <td class="meal-label">{{ getMealLabel(mealType) }}</td>
             @for (day of weekDays; track day.id) {
-              <td class="meal-cell">{{ getRecipeForSlot(day, mealType) }}</td>
+              @let slot = getSlotForMeal(day, mealType);
+              <td class="meal-cell">
+                <span>{{ getRecipeForSlot(day, mealType) }}</span>
+                <button type="button" class="change-recipe" (click)="startRecipeOverride(slot)" [disabled]="!slot">
+                  Cambiar
+                </button>
+              </td>
             }
           </tr>
         }
       </tbody>
     </table>
+
+    @if (editingSlot) {
+      <section class="override-panel">
+        <h3>Cambiar receta de {{ getMealLabel(editingSlot.type) }}</h3>
+
+        @if (recipesLoading) {
+          <p>Cargando recetas...</p>
+        } @else if (compatibleRecipes.length === 0) {
+          <p>No hay recetas compatibles.</p>
+        } @else {
+          <label>
+            Receta
+            <select [value]="selectedRecipeId ?? ''" (change)="onRecipeSelectionChange($event)">
+              <option value="">Selecciona una receta</option>
+              @for (recipe of compatibleRecipes; track recipe.id) {
+                <option [value]="recipe.id">{{ recipe.name }}</option>
+              }
+            </select>
+          </label>
+
+          <div class="override-actions">
+            <button type="button" (click)="saveRecipeOverride()" [disabled]="overrideSaving">
+              {{ overrideSaving ? 'Guardando...' : 'Guardar cambio' }}
+            </button>
+            <button type="button" class="secondary" (click)="cancelRecipeOverride()" [disabled]="overrideSaving">
+              Cancelar
+            </button>
+          </div>
+        }
+      </section>
+    }
   }
 
 </div>

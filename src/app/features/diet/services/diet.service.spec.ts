@@ -47,4 +47,31 @@ describe('DietService', () => {
     expect(httpRequest.request.body).toEqual(request);
     httpRequest.flush({ id: 1, ...request, days: [] });
   });
+
+  it('overrides a meal slot recipe through the API', () => {
+    service.overrideMealSlotRecipe(10, 20).subscribe(slot => {
+      expect(slot.id).toBe(10);
+      expect(slot.recipe.id).toBe(20);
+    });
+
+    const httpRequest = httpMock.expectOne(`${environment.apiUrl}/meal-slots/10/recipe`);
+    expect(httpRequest.request.method).toBe('PATCH');
+    expect(httpRequest.request.body).toEqual({ recipeId: 20 });
+    httpRequest.flush({
+      id: 10,
+      type: 'LUNCH',
+      recipe: {
+        id: 20,
+        name: 'Arroz',
+        nutritionSummary: {
+          totalCalories: 100,
+          totalProtein: 5,
+          totalCarbs: 20,
+          totalFat: 1,
+        },
+        tags: [],
+        servings: 1,
+      },
+    });
+  });
 });

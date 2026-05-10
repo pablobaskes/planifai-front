@@ -55,7 +55,6 @@
 }
 
 .meal-cell {
-  cursor: pointer;
   font-size: 0.9rem;
   color: #333;
 }
@@ -66,6 +65,70 @@
 
 .meal-col {
   width: 120px;
+}
+
+.meal-cell span {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.change-recipe,
+.override-actions button {
+  min-height: 32px;
+  border: 1px solid #2563eb;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  padding: 0 10px;
+}
+
+.change-recipe:disabled,
+.override-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.override-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+  max-width: 520px;
+}
+
+.override-panel h3,
+.override-panel p {
+  margin: 0;
+}
+
+.override-panel label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.override-panel select {
+  min-height: 36px;
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+  font: inherit;
+  padding: 6px 8px;
+}
+
+.override-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.override-actions button.secondary {
+  border-color: #8c959f;
+  background: #fff;
+  color: #1f2937;
 }
 
 .loading, .error, .empty {
