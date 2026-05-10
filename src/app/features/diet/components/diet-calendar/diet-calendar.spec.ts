@@ -88,6 +88,15 @@ describe('DietCalendar', () => {
     expect(fixture.nativeElement.textContent).toContain('Cambiar');
   });
 
+  it('formats the calendar week with local dates and month', () => {
+    component.currentWeekStart = new Date(2026, 4, 11);
+
+    expect(component['formatDate'](component.currentWeekStart)).toBe('2026-05-11');
+    expect(component.weekRangeLabel).toContain('mayo 2026');
+    expect(component.weekRangeLabel).toContain('lun 11');
+    expect(component.weekRangeLabel).toContain('dom 17');
+  });
+
   it('loads recipes and overrides a meal slot recipe', () => {
     const slot = diet.days[0].mealSlots[0];
 

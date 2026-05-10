@@ -3,6 +3,7 @@ import { of, throwError } from 'rxjs';
 
 import { InventoryItem } from '../../models/inventory-item.model';
 import { InventoryService } from '../../services/inventory.service';
+import { FoodService } from '../../../diet/services/food.service';
 import { InventoryPage } from './inventory-page';
 
 describe('InventoryPage', () => {
@@ -13,12 +14,14 @@ describe('InventoryPage', () => {
     update: ReturnType<typeof vi.fn>;
     delete: ReturnType<typeof vi.fn>;
   };
+  let foodService: {
+    getAllFoods: ReturnType<typeof vi.fn>;
+  };
 
   const item: InventoryItem = {
     id: 1,
     portion: {
       foodId: 101,
-      foodName: 'Rice',
       quantity: 2,
       unit: 'KG',
     },
@@ -32,11 +35,25 @@ describe('InventoryPage', () => {
       update: vi.fn().mockReturnValue(of(item)),
       delete: vi.fn().mockReturnValue(of(undefined)),
     };
+    foodService = {
+      getAllFoods: vi.fn().mockReturnValue(of([
+        {
+          id: 101,
+          name: 'Rice',
+          category: 'GRAIN',
+          caloriesPer100g: 130,
+          proteinPer100g: 2.7,
+          carbsPer100g: 28,
+          fatPer100g: 0.3,
+        },
+      ])),
+    };
 
     await TestBed.configureTestingModule({
       imports: [InventoryPage],
       providers: [
         { provide: InventoryService, useValue: service },
+        { provide: FoodService, useValue: foodService },
       ],
     }).compileComponents();
 
@@ -46,6 +63,7 @@ describe('InventoryPage', () => {
 
   it('loads and renders inventory items', () => {
     expect(service.getAll).toHaveBeenCalledWith(undefined);
+    expect(foodService.getAllFoods).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Rice');
     expect(fixture.nativeElement.textContent).toContain('2 KG');
   });

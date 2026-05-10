@@ -2,8 +2,9 @@ import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 
+import { FoodService } from '../../../diet/services/food.service';
 import {
   InventoryItem,
   InventoryItemRequest,
@@ -22,6 +23,7 @@ export class InventoryPage implements OnInit {
 
   private readonly formBuilder = inject(FormBuilder);
   private readonly inventoryService = inject(InventoryService);
+  private readonly foodService = inject(FoodService);
 
   protected readonly locations: StorageLocation[] = ['PANTRY', 'FRIDGE', 'FREEZER', 'OTHER'];
   protected readonly units: MeasureUnit[] = ['G', 'KG', 'ML', 'L', 'UNIT', 'TBSP', 'TSP', 'CUP'];
@@ -33,6 +35,7 @@ export class InventoryPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly selectedLocation = signal<StorageLocation | ''>('');
   protected readonly editingId = signal<number | null>(null);
+  protected readonly foodNames = signal<Map<number, string>>(new Map());
 
   protected readonly inventoryForm = this.formBuilder.group({
     foodId: [null as number | null, [Validators.required, Validators.min(1)]],
@@ -52,10 +55,16 @@ export class InventoryPage implements OnInit {
     this.loading.set(true);
     this.error.set(null);
 
-    this.inventoryService.getAll(location)
+    forkJoin({
+      items: this.inventoryService.getAll(location),
+      foods: this.foodService.getAllFoods().pipe(catchError(() => of([]))),
+    })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: items => this.items.set(items),
+        next: ({ items, foods }) => {
+          this.items.set(items);
+          this.foodNames.set(new Map(foods.map(food => [food.id, food.name])));
+        },
         error: error => this.error.set(this.resolveError(error)),
       });
   }
@@ -131,6 +140,10 @@ export class InventoryPage implements OnInit {
 
   protected trackById(_index: number, item: InventoryItem): number {
     return item.id;
+  }
+
+  protected getFoodName(item: InventoryItem): string {
+    return item.portion.foodName || this.foodNames().get(item.portion.foodId) || `Food ${item.portion.foodId}`;
   }
 
   private buildRequest(): InventoryItemRequest {

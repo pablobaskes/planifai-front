@@ -94,7 +94,7 @@
           @for (item of items(); track trackById($index, item)) {
             <tr>
               <td>{{ item.portion.foodId }}</td>
-              <td>{{ item.portion.foodName || '-' }}</td>
+              <td>{{ getFoodName(item) }}</td>
               <td>{{ item.portion.quantity }} {{ item.portion.unit }}</td>
               <td>{{ item.location }}</td>
               <td class="row-actions">

@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { finalize } from 'rxjs';
 
 import { DietDay } from '../../models/diet-day.model';
 import { Diet } from '../../models/diet.model';
@@ -46,15 +47,15 @@ export class DietCalendar implements OnInit {
     const from = this.formatDate(this.currentWeekStart);
     const to = this.formatDate(this.getSunday(this.currentWeekStart));
 
-    this.dietService.getDietsByDateRange(from, to).subscribe({
+    this.dietService.getDietsByDateRange(from, to)
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
       next: diets => {
         this.diet = diets.length > 0 ? diets[0] : null;
         this.weekDays = this.diet?.days ?? [];
-        this.loading = false;
       },
       error: () => {
         this.error = 'Error cargando la dieta';
-        this.loading = false;
       }
     });
   }
@@ -153,7 +154,20 @@ export class DietCalendar implements OnInit {
 
   get weekRangeLabel(): string {
     const sunday = this.getSunday(this.currentWeekStart);
-    return `${this.formatDateLabel(this.formatDate(this.currentWeekStart))} - ${this.formatDateLabel(this.formatDate(sunday))}`;
+    return `${this.monthLabel} - ${this.formatDateLabel(this.formatDate(this.currentWeekStart))} - ${this.formatDateLabel(this.formatDate(sunday))}`;
+  }
+
+  get monthLabel(): string {
+    const sunday = this.getSunday(this.currentWeekStart);
+    const month = this.currentWeekStart.toLocaleDateString('es-ES', { month: 'long' });
+    const year = this.currentWeekStart.getFullYear();
+
+    if (this.currentWeekStart.getMonth() === sunday.getMonth()) {
+      return `${month} ${year}`;
+    }
+
+    const endMonth = sunday.toLocaleDateString('es-ES', { month: 'long' });
+    return `${month} / ${endMonth} ${year}`;
   }
 
   private loadRecipes(): void {
@@ -184,7 +198,10 @@ export class DietCalendar implements OnInit {
   }
 
   private formatDate(date: Date): string {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 
   private resolveError(error: unknown): string {
