@@ -120,6 +120,6 @@ describe('DietCalendar', () => {
     component.onRecipeSelectionChange({ target: { value: '99' } } as unknown as Event);
     component.saveRecipeOverride();
 
-    expect(component.overrideError).toBe('No se pudo cambiar la receta.');
+    expect(component.overrideError()).toBe('No se pudo cambiar la receta.');
   });
 });

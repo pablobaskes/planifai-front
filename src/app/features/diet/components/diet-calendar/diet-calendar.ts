@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { finalize } from 'rxjs';
 
 import { DietDay } from '../../models/diet-day.model';
@@ -18,18 +18,18 @@ import { RecipeService } from '../../services/recipe.service';
   styleUrl: './diet-calendar.css',
 })
 export class DietCalendar implements OnInit {
-  diet: Diet | null = null;
-  weekDays: DietDay[] = [];
+  diet = signal<Diet | null>(null);
+  weekDays = signal<DietDay[]>([]);
   mealTypes = ['BREAKFAST', 'LUNCH', 'DINNER'] as const;
   currentWeekStart: Date = this.getMonday(new Date());
-  loading = false;
-  recipesLoading = false;
-  overrideSaving = false;
-  error: string | null = null;
-  overrideError: string | null = null;
-  recipes: Recipe[] = [];
-  editingSlot: MealSlot | null = null;
-  selectedRecipeId: number | null = null;
+  loading = signal(false);
+  recipesLoading = signal(false);
+  overrideSaving = signal(false);
+  error = signal<string | null>(null);
+  overrideError = signal<string | null>(null);
+  recipes = signal<Recipe[]>([]);
+  editingSlot = signal<MealSlot | null>(null);
+  selectedRecipeId = signal<number | null>(null);
 
   constructor(
     private readonly dietService: DietService,
@@ -41,21 +41,24 @@ export class DietCalendar implements OnInit {
   }
 
   loadWeek(): void {
-    this.loading = true;
-    this.error = null;
+    this.loading.set(true);
+    this.error.set(null);
 
     const from = this.formatDate(this.currentWeekStart);
     const to = this.formatDate(this.getSunday(this.currentWeekStart));
 
     this.dietService.getDietsByDateRange(from, to)
-      .pipe(finalize(() => this.loading = false))
+      .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
       next: diets => {
-        this.diet = diets.length > 0 ? diets[0] : null;
-        this.weekDays = this.diet?.days ?? [];
+        const currentDiet = diets.length > 0 ? diets[0] : null;
+        this.diet.set(currentDiet);
+        this.weekDays.set(currentDiet?.days ?? []);
       },
       error: () => {
-        this.error = 'Error cargando la dieta';
+        this.diet.set(null);
+        this.weekDays.set([]);
+        this.error.set('Error cargando la dieta');
       }
     });
   }
@@ -97,54 +100,59 @@ export class DietCalendar implements OnInit {
       return;
     }
 
-    this.editingSlot = slot;
-    this.selectedRecipeId = slot.recipe?.id ?? null;
-    this.overrideError = null;
+    this.editingSlot.set(slot);
+    this.selectedRecipeId.set(slot.recipe?.id ?? null);
+    this.overrideError.set(null);
 
-    if (this.recipes.length === 0) {
+    if (this.recipes().length === 0) {
       this.loadRecipes();
     }
   }
 
   cancelRecipeOverride(): void {
-    this.editingSlot = null;
-    this.selectedRecipeId = null;
-    this.overrideError = null;
+    this.editingSlot.set(null);
+    this.selectedRecipeId.set(null);
+    this.overrideError.set(null);
   }
 
   onRecipeSelectionChange(event: Event): void {
     const value = (event.target as HTMLSelectElement).value;
-    this.selectedRecipeId = value ? Number(value) : null;
+    this.selectedRecipeId.set(value ? Number(value) : null);
   }
 
   saveRecipeOverride(): void {
-    if (!this.editingSlot || !this.selectedRecipeId) {
-      this.overrideError = 'Selecciona una receta.';
+    const editingSlot = this.editingSlot();
+    const selectedRecipeId = this.selectedRecipeId();
+
+    if (!editingSlot || !selectedRecipeId) {
+      this.overrideError.set('Selecciona una receta.');
       return;
     }
 
-    this.overrideSaving = true;
-    this.overrideError = null;
+    this.overrideSaving.set(true);
+    this.overrideError.set(null);
 
-    this.dietService.overrideMealSlotRecipe(this.editingSlot.id, this.selectedRecipeId).subscribe({
+    this.dietService.overrideMealSlotRecipe(editingSlot.id, selectedRecipeId).subscribe({
       next: () => {
-        this.overrideSaving = false;
+        this.overrideSaving.set(false);
         this.cancelRecipeOverride();
         this.loadWeek();
       },
       error: error => {
-        this.overrideSaving = false;
-        this.overrideError = this.resolveError(error);
+        this.overrideSaving.set(false);
+        this.overrideError.set(this.resolveError(error));
       }
     });
   }
 
   get compatibleRecipes(): Recipe[] {
-    if (!this.editingSlot) {
-      return this.recipes;
+    const editingSlot = this.editingSlot();
+
+    if (!editingSlot) {
+      return this.recipes();
     }
 
-    return this.recipes.filter(recipe => !recipe.mealType || recipe.mealType === this.editingSlot?.type);
+    return this.recipes().filter(recipe => !recipe.mealType || recipe.mealType === editingSlot.type);
   }
 
   formatDateLabel(dateStr: string): string {
@@ -171,15 +179,15 @@ export class DietCalendar implements OnInit {
   }
 
   private loadRecipes(): void {
-    this.recipesLoading = true;
+    this.recipesLoading.set(true);
     this.recipeService.getAllRecipes().subscribe({
       next: recipes => {
-        this.recipes = recipes;
-        this.recipesLoading = false;
+        this.recipes.set(recipes);
+        this.recipesLoading.set(false);
       },
       error: error => {
-        this.overrideError = this.resolveError(error);
-        this.recipesLoading = false;
+        this.overrideError.set(this.resolveError(error));
+        this.recipesLoading.set(false);
       }
     });
   }

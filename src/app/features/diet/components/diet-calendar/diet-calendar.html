@@ -6,28 +6,28 @@
     <button type="button" (click)="nextWeek()">&gt;</button>
   </div>
 
-  @if (loading) {
+  @if (loading()) {
     <div class="loading">Cargando...</div>
   }
 
-  @if (error) {
-    <div class="error">{{ error }}</div>
+  @if (error()) {
+    <div class="error">{{ error() }}</div>
   }
 
-  @if (!loading && !diet) {
+  @if (!loading() && !diet()) {
     <div class="empty">No hay dieta para esta semana</div>
   }
 
-  @if (!loading && diet) {
-    @if (overrideError) {
-      <div class="error">{{ overrideError }}</div>
+  @if (!loading() && diet()) {
+    @if (overrideError()) {
+      <div class="error">{{ overrideError() }}</div>
     }
 
     <table class="calendar-table">
       <thead>
         <tr>
           <th class="meal-col"></th>
-          @for (day of weekDays; track day.id) {
+          @for (day of weekDays(); track day.id) {
             <th>{{ formatDateLabel(day.date) }}</th>
           }
         </tr>
@@ -36,7 +36,7 @@
         @for (mealType of mealTypes; track mealType) {
           <tr>
             <td class="meal-label">{{ getMealLabel(mealType) }}</td>
-            @for (day of weekDays; track day.id) {
+            @for (day of weekDays(); track day.id) {
               @let slot = getSlotForMeal(day, mealType);
               <td class="meal-cell">
                 <span>{{ getRecipeForSlot(day, mealType) }}</span>
@@ -50,18 +50,18 @@
       </tbody>
     </table>
 
-    @if (editingSlot) {
+    @if (editingSlot(); as slotToEdit) {
       <section class="override-panel">
-        <h3>Cambiar receta de {{ getMealLabel(editingSlot.type) }}</h3>
+        <h3>Cambiar receta de {{ getMealLabel(slotToEdit.type) }}</h3>
 
-        @if (recipesLoading) {
+        @if (recipesLoading()) {
           <p>Cargando recetas...</p>
         } @else if (compatibleRecipes.length === 0) {
           <p>No hay recetas compatibles.</p>
         } @else {
           <label>
             Receta
-            <select [value]="selectedRecipeId ?? ''" (change)="onRecipeSelectionChange($event)">
+            <select [value]="selectedRecipeId() ?? ''" (change)="onRecipeSelectionChange($event)">
               <option value="">Selecciona una receta</option>
               @for (recipe of compatibleRecipes; track recipe.id) {
                 <option [value]="recipe.id">{{ recipe.name }}</option>
@@ -70,10 +70,10 @@
           </label>
 
           <div class="override-actions">
-            <button type="button" (click)="saveRecipeOverride()" [disabled]="overrideSaving">
-              {{ overrideSaving ? 'Guardando...' : 'Guardar cambio' }}
+            <button type="button" (click)="saveRecipeOverride()" [disabled]="overrideSaving()">
+              {{ overrideSaving() ? 'Guardando...' : 'Guardar cambio' }}
             </button>
-            <button type="button" class="secondary" (click)="cancelRecipeOverride()" [disabled]="overrideSaving">
+            <button type="button" class="secondary" (click)="cancelRecipeOverride()" [disabled]="overrideSaving()">
               Cancelar
             </button>
           </div>
