@@ -2,10 +2,12 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { DietDay } from '../../models/diet-day.model';
 import { Diet } from '../../models/diet.model';
 import { DietService } from '../../services/diet.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-diet-calendar',
-  imports: [],
+  standalone: true,
+  imports: [CommonModule],
   templateUrl: './diet-calendar.html',
   styleUrl: './diet-calendar.css',
 })
@@ -36,12 +38,17 @@ export class DietCalendar implements OnInit{
 
     this.dietService.getDietsByDateRange(from, to).subscribe({
       next: (diets) => {
-        console.log('Response received:', diets);
+        console.log('RAW diets:', diets);
+        console.log('First diet:', diets[0]);
+        console.log('days:', diets[0]?.days);
+        console.log('days length:', diets[0]?.days?.length);
+
         this.diet = diets.length > 0 ? diets[0] : null;
         this.weekDays = this.diet?.days ?? [];
         this.loading = false;
         this.cdr.detectChanges();
         console.log('loading set to false, diet:', this.diet);
+        
       },
       error: (err) => {
         console.error('Error:', err);
