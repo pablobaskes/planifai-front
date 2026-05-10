@@ -1,1 +1,54 @@
-<p>diet-create-page works!</p>
+<section class="diet-create-page">
+  <header>
+    <h1>Crear dieta</h1>
+  </header>
+
+  <form [formGroup]="dietForm" (ngSubmit)="submit()">
+    <label>
+      Nombre
+      <input type="text" formControlName="name">
+      @if (isInvalid('name')) {
+        <span class="field-error">El nombre es obligatorio.</span>
+      }
+    </label>
+
+    <label>
+      Descripcion
+      <textarea rows="3" formControlName="description"></textarea>
+    </label>
+
+    <label>
+      Fecha inicio
+      <input type="date" formControlName="initDate">
+      @if (isInvalid('initDate')) {
+        <span class="field-error">La fecha de inicio es obligatoria.</span>
+      }
+    </label>
+
+    <label>
+      Fecha fin
+      <input type="date" formControlName="endDate">
+      @if (isInvalid('endDate')) {
+        <span class="field-error">La fecha de fin es obligatoria.</span>
+      }
+    </label>
+
+    <label>
+      Calorias objetivo
+      <input type="number" min="1" formControlName="caloriesTarget">
+      @if (isInvalid('caloriesTarget')) {
+        <span class="field-error">Introduce un objetivo positivo.</span>
+      }
+    </label>
+
+    @if (error()) {
+      <p class="state error" role="alert">{{ error() }}</p>
+    }
+
+    <div class="actions">
+      <button type="submit" [disabled]="saving()">
+        {{ saving() ? 'Creando...' : 'Crear dieta' }}
+      </button>
+    </div>
+  </form>
+</section>

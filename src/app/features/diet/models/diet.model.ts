@@ -10,4 +10,12 @@ export interface Diet {
   days: DietDay[];
 }
 
+export interface DietRequest {
+  name: string;
+  description?: string;
+  caloriesTarget: number;
+  initDate: string;
+  endDate: string;
+}
+
 export type { DietDay };

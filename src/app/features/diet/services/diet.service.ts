@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Diet } from '../models/diet.model';
+import { Diet, DietRequest } from '../models/diet.model';
 import { environment } from '../../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
@@ -10,6 +10,10 @@ export class DietService {
   private readonly baseUrl = `${environment.apiUrl}/diets`;
 
   constructor(private http: HttpClient) {}
+
+  createDiet(request: DietRequest): Observable<Diet> {
+    return this.http.post<Diet>(this.baseUrl, request);
+  }
 
   getDietsByDateRange(from: string, to: string): Observable<Diet[]> {
     const params = new HttpParams()
