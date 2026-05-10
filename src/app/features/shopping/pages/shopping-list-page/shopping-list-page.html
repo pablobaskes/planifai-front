@@ -1,0 +1,70 @@
+<section class="shopping-page">
+  <header class="page-header">
+    <div>
+      <h1>Lista de la compra</h1>
+      @if (list(); as shoppingList) {
+        <p>Semana {{ shoppingList.weekStart }} · {{ shoppingList.status }}</p>
+      }
+    </div>
+
+    <div class="toolbar">
+      <button type="button" (click)="loadCurrent()" [disabled]="loading()">Cargar actual</button>
+      <button type="button" (click)="generateCurrent()" [disabled]="generating()">Generar</button>
+      @if (list(); as shoppingList) {
+        <button type="button" (click)="purchaseAll()" [disabled]="purchasingAll() || !hasPendingItems(shoppingList)">
+          {{ purchasingAll() ? 'Comprando...' : 'Comprar todo' }}
+        </button>
+      }
+    </div>
+  </header>
+
+  @if (error()) {
+    <p class="state error" role="alert">{{ error() }}</p>
+  }
+
+  @if (loading()) {
+    <p class="state">Cargando lista de la compra...</p>
+  } @else if (!list()) {
+    <p class="state">No hay lista cargada.</p>
+  } @else if (list()?.items?.length === 0) {
+    <p class="state">La lista no tiene items pendientes.</p>
+  } @else {
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Alimento</th>
+            <th>Necesario</th>
+            <th>Disponible</th>
+            <th>Faltante</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (item of list()?.items; track trackById($index, item)) {
+            <tr [class.purchased]="item.purchased">
+              <td>
+                <strong>{{ item.foodName }}</strong>
+                <span>Food ID {{ item.foodId }}</span>
+              </td>
+              <td>{{ item.requiredQuantity }} {{ item.unit }}</td>
+              <td>{{ item.availableQuantity }} {{ item.unit }}</td>
+              <td>{{ item.missingQuantity }} {{ item.unit }}</td>
+              <td>{{ item.purchased ? 'Comprado' : 'Pendiente' }}</td>
+              <td>
+                <button
+                  type="button"
+                  (click)="purchaseItem(item)"
+                  [disabled]="item.purchased || purchasingItemId() === item.id"
+                >
+                  {{ purchasingItemId() === item.id ? 'Comprando...' : 'Comprar' }}
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

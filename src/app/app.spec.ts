@@ -23,5 +23,6 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('router-outlet')).toBeTruthy();
     expect(compiled.querySelector('a[routerLink="/inventory"]')).toBeTruthy();
+    expect(compiled.querySelector('a[routerLink="/shopping"]')).toBeTruthy();
   });
 });
