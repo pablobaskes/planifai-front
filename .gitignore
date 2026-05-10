@@ -42,3 +42,5 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+ng-serve.err.log
+ng-serve.out.log
