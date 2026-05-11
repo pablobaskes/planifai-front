@@ -39,6 +39,17 @@ describe('DietCalendar', () => {
     endDate: '2026-05-17',
     days: [
       {
+        id: 99,
+        date: '2026-05-10',
+        mealSlots: [
+          {
+            id: 9,
+            type: 'LUNCH',
+            recipe: { ...recipe, id: 19, name: 'Fuera de semana' },
+          },
+        ],
+      },
+      {
         id: 100,
         date: '2026-05-11',
         mealSlots: [
@@ -78,6 +89,7 @@ describe('DietCalendar', () => {
 
     fixture = TestBed.createComponent(DietCalendar);
     component = fixture.componentInstance;
+    component.currentWeekStart = new Date(2026, 4, 11);
     fixture.detectChanges();
   });
 
@@ -85,6 +97,7 @@ describe('DietCalendar', () => {
     expect(component).toBeTruthy();
     expect(dietService.getDietsByDateRange).toHaveBeenCalled();
     expect(fixture.nativeElement.textContent).toContain('Arroz');
+    expect(fixture.nativeElement.textContent).not.toContain('Fuera de semana');
     expect(fixture.nativeElement.textContent).toContain('Cambiar');
   });
 
@@ -98,7 +111,7 @@ describe('DietCalendar', () => {
   });
 
   it('loads recipes and overrides a meal slot recipe', () => {
-    const slot = diet.days[0].mealSlots[0];
+    const slot = diet.days.find(day => day.date === '2026-05-11')!.mealSlots[0];
 
     component.startRecipeOverride(slot);
     expect(recipeService.getAllRecipes).toHaveBeenCalled();
@@ -114,7 +127,7 @@ describe('DietCalendar', () => {
     dietService.overrideMealSlotRecipe.mockReturnValueOnce(throwError(() => ({
       error: { message: 'Recipe not found with id: 99' },
     })));
-    const slot = diet.days[0].mealSlots[0];
+    const slot = diet.days.find(day => day.date === '2026-05-11')!.mealSlots[0];
 
     component.startRecipeOverride(slot);
     component.onRecipeSelectionChange({ target: { value: '99' } } as unknown as Event);

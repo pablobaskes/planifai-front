@@ -51,9 +51,13 @@ export class DietCalendar implements OnInit {
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
       next: diets => {
-        const currentDiet = diets.length > 0 ? diets[0] : null;
-        this.diet.set(currentDiet);
-        this.weekDays.set(currentDiet?.days ?? []);
+        const currentDiet = diets.find(diet =>
+          diet.days.some(day => this.isDateInRange(day.date, from, to))
+        ) ?? null;
+        const visibleDays = currentDiet?.days.filter(day => this.isDateInRange(day.date, from, to)) ?? [];
+
+        this.diet.set(visibleDays.length > 0 ? currentDiet : null);
+        this.weekDays.set(visibleDays);
       },
       error: () => {
         this.diet.set(null);
@@ -210,6 +214,10 @@ export class DietCalendar implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private isDateInRange(date: string, from: string, to: string): boolean {
+    return date >= from && date <= to;
   }
 
   private resolveError(error: unknown): string {
