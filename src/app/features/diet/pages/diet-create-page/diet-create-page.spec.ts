@@ -92,4 +92,25 @@ describe('DietCreatePage', () => {
 
     expect(fixture.nativeElement.textContent).toContain('endDate cannot be before initDate.');
   });
+
+  it('shows overlapping diet conflicts', () => {
+    dietService.createDiet.mockReturnValueOnce(throwError(() => new HttpErrorResponse({
+      error: { message: 'A diet already exists overlapping the requested range 2026-05-11 to 2026-05-17.' },
+      status: 409,
+    })));
+    const form = component['dietForm'];
+
+    form.setValue({
+      name: 'Overlapping',
+      description: '',
+      initDate: '2026-05-11',
+      endDate: '2026-05-17',
+      caloriesTarget: 2000,
+    });
+
+    component['submit']();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('already exists overlapping');
+  });
 });

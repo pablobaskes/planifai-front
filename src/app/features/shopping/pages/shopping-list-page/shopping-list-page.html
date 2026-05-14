@@ -8,19 +8,6 @@
     </div>
 
     <div class="toolbar">
-      <label class="diet-picker">
-        <span>Dieta</span>
-        <select
-          [value]="selectedDietId() ?? ''"
-          (change)="selectDiet($any($event.target).value)"
-          [disabled]="loadingDiets()"
-        >
-          <option value="">{{ loadingDiets() ? 'Cargando dietas...' : 'Seleccionar dieta' }}</option>
-          @for (diet of diets(); track trackDietById($index, diet)) {
-            <option [value]="diet.id">{{ diet.name }} ({{ diet.initDate }} - {{ diet.endDate }})</option>
-          }
-        </select>
-      </label>
       <button type="button" (click)="loadCurrent()" [disabled]="loading()">Cargar actual</button>
       <button type="button" (click)="generateCurrent()" [disabled]="generating()">Generar</button>
       @if (list(); as shoppingList) {

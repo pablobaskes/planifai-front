@@ -76,6 +76,10 @@ export class DietCreatePage {
       if (error.error && typeof error.error.message === 'string') {
         return error.error.message;
       }
+
+      if (error.status === 409) {
+        return 'Ya existe una dieta activa que se solapa con ese rango de fechas. Elimina la dieta anterior antes de crear otra.';
+      }
     }
 
     return 'No se pudo crear la dieta.';

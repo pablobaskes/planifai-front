@@ -28,26 +28,6 @@ h1 {
   flex-wrap: wrap;
 }
 
-.diet-picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.diet-picker span {
-  color: #57606a;
-}
-
-select {
-  min-height: 36px;
-  max-width: 320px;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-  background: #ffffff;
-  font: inherit;
-  padding: 0 10px;
-}
-
 button {
   min-height: 36px;
   border: 1px solid #2563eb;
