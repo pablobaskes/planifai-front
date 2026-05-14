@@ -10,6 +10,7 @@ describe('ShoppingListService', () => {
   let service: ShoppingListService;
   let httpMock: HttpTestingController;
   const baseUrl = `${environment.apiUrl}/shopping-lists`;
+  const dietShoppingBaseUrl = `${environment.apiUrl}/diets/42/shopping-lists`;
 
   const list: ShoppingList = {
     id: 1,
@@ -36,10 +37,10 @@ describe('ShoppingListService', () => {
   });
 
   it('generates and loads the current shopping list', () => {
-    service.generateCurrent().subscribe(response => {
+    service.generateCurrent(42).subscribe(response => {
       expect(response).toEqual(list);
     });
-    const generateRequest = httpMock.expectOne(`${baseUrl}/generate`);
+    const generateRequest = httpMock.expectOne(`${dietShoppingBaseUrl}/generate`);
     expect(generateRequest.request.method).toBe('POST');
     generateRequest.flush(list);
 

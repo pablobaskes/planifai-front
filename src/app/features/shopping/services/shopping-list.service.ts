@@ -12,8 +12,11 @@ export class ShoppingListService {
 
   constructor(private readonly http: HttpClient) {}
 
-  generateCurrent(): Observable<ShoppingList> {
-    return this.http.post<ShoppingList>(`${this.baseUrl}/generate`, null);
+  generateCurrent(dietId: number): Observable<ShoppingList> {
+    return this.http.post<ShoppingList>(
+      `${environment.apiUrl}/diets/${dietId}/shopping-lists/generate`,
+      null
+    );
   }
 
   getCurrent(): Observable<ShoppingList> {
