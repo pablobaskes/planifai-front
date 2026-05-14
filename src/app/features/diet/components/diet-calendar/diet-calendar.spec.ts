@@ -96,6 +96,9 @@ describe('DietCalendar', () => {
   it('loads and renders the calendar with change actions', () => {
     expect(component).toBeTruthy();
     expect(dietService.getDietsByDateRange).toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Dieta actual');
+    expect(fixture.nativeElement.textContent).toContain('Wave 1 Diet');
+    expect(fixture.nativeElement.textContent).toContain('2026-05-11 - 2026-05-17');
     expect(fixture.nativeElement.textContent).toContain('Arroz');
     expect(fixture.nativeElement.textContent).not.toContain('Fuera de semana');
     expect(fixture.nativeElement.textContent).toContain('Cambiar');

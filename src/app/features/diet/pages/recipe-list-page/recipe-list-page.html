@@ -1,1 +1,33 @@
-<p>recipe-list-page works!</p>
+<section class="recipes-page">
+  <header>
+    <h1>Recetas</h1>
+    <button type="button" (click)="loadRecipes()" [disabled]="loading()">Actualizar</button>
+  </header>
+
+  @if (loading()) {
+    <p class="state">Cargando recetas...</p>
+  }
+
+  @if (error()) {
+    <p class="state error" role="alert">{{ error() }}</p>
+  }
+
+  @if (!loading() && recipes().length === 0) {
+    <p class="state muted">No hay recetas disponibles.</p>
+  }
+
+  @if (!loading() && recipes().length > 0) {
+    <div class="recipe-list">
+      @for (recipe of recipes(); track recipe.id) {
+        <article class="recipe-item">
+          <div class="recipe-title">
+            <h2>{{ recipe.name }}</h2>
+            <span>{{ mealTypeLabel(recipe.mealType) }}</span>
+          </div>
+          <p>{{ nutritionLabel(recipe) }}</p>
+          <p class="muted">{{ ingredientsLabel(recipe) }}</p>
+        </article>
+      }
+    </div>
+  }
+</section>

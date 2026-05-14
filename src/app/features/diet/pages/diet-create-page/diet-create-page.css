@@ -8,9 +8,16 @@ h1 {
   margin: 0 0 20px;
 }
 
+h2,
+h3,
+p {
+  margin: 0;
+}
+
 form {
   display: grid;
   gap: 14px;
+  margin-bottom: 28px;
 }
 
 label {
@@ -64,4 +71,57 @@ button:disabled {
 .actions {
   display: flex;
   justify-content: flex-start;
+}
+
+.diet-list {
+  display: grid;
+  gap: 14px;
+}
+
+.list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.diet-items {
+  display: grid;
+  gap: 10px;
+}
+
+.diet-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+}
+
+.diet-item div {
+  display: grid;
+  gap: 4px;
+}
+
+.diet-item h3 {
+  font-size: 1rem;
+}
+
+.diet-item p,
+.diet-item span,
+.muted {
+  color: #667085;
+}
+
+button.secondary {
+  border-color: #8c959f;
+  background: #fff;
+  color: #1f2937;
+}
+
+button.danger {
+  border-color: #b42318;
+  background: #b42318;
 }

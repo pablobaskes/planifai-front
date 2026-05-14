@@ -1,9 +1,11 @@
 <section class="diet-create-page">
   <header>
-    <h1>Crear dieta</h1>
+    <h1>Dietas</h1>
   </header>
 
   <form [formGroup]="dietForm" (ngSubmit)="submit()">
+    <h2>Crear dieta</h2>
+
     <label>
       Nombre
       <input type="text" formControlName="name">
@@ -51,4 +53,42 @@
       </button>
     </div>
   </form>
+
+  <section class="diet-list" aria-label="Dietas creadas">
+    <div class="list-header">
+      <h2>Dietas creadas</h2>
+      <button type="button" class="secondary" (click)="loadDiets()" [disabled]="loading()">Actualizar</button>
+    </div>
+
+    @if (loading()) {
+      <p class="state">Cargando dietas...</p>
+    }
+
+    @if (listError()) {
+      <p class="state error" role="alert">{{ listError() }}</p>
+    }
+
+    @if (!loading() && diets().length === 0) {
+      <p class="state muted">No hay dietas creadas.</p>
+    }
+
+    @if (!loading() && diets().length > 0) {
+      <div class="diet-items">
+        @for (diet of diets(); track diet.id) {
+          <article class="diet-item">
+            <div>
+              <h3>{{ diet.name }}</h3>
+              @if (diet.description) {
+                <p>{{ diet.description }}</p>
+              }
+              <span>{{ diet.initDate }} - {{ diet.endDate }}</span>
+            </div>
+            <button type="button" class="danger" (click)="deleteDiet(diet)" [disabled]="deletingId() === diet.id">
+              {{ deletingId() === diet.id ? 'Eliminando...' : 'Eliminar' }}
+            </button>
+          </article>
+        }
+      </div>
+    }
+  </section>
 </section>

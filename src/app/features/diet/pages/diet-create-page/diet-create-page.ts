@@ -1,10 +1,9 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
 import { finalize } from 'rxjs';
 
-import { DietRequest } from '../../models/diet.model';
+import { Diet, DietRequest } from '../../models/diet.model';
 import { DietService } from '../../services/diet.service';
 
 @Component({
@@ -13,14 +12,17 @@ import { DietService } from '../../services/diet.service';
   templateUrl: './diet-create-page.html',
   styleUrl: './diet-create-page.css',
 })
-export class DietCreatePage {
+export class DietCreatePage implements OnInit {
 
   private readonly dietService = inject(DietService);
   private readonly formBuilder = inject(FormBuilder);
-  private readonly router = inject(Router);
 
   protected readonly saving = signal(false);
+  protected readonly loading = signal(false);
+  protected readonly deletingId = signal<number | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly listError = signal<string | null>(null);
+  protected readonly diets = signal<Diet[]>([]);
 
   protected readonly dietForm = this.formBuilder.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
@@ -29,6 +31,22 @@ export class DietCreatePage {
     endDate: ['', Validators.required],
     caloriesTarget: [2000, [Validators.required, Validators.min(1)]],
   });
+
+  ngOnInit(): void {
+    this.loadDiets();
+  }
+
+  protected loadDiets(): void {
+    this.loading.set(true);
+    this.listError.set(null);
+
+    this.dietService.getAllDiets()
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: diets => this.diets.set(diets),
+        error: error => this.listError.set(this.resolveError(error, 'No se pudieron cargar las dietas.')),
+      });
+  }
 
   protected submit(): void {
     if (this.dietForm.invalid) {
@@ -43,9 +61,28 @@ export class DietCreatePage {
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
         next: () => {
-          void this.router.navigate(['/diet/calendar']);
+          this.dietForm.reset({
+            name: '',
+            description: '',
+            initDate: '',
+            endDate: '',
+            caloriesTarget: 2000,
+          });
+          this.loadDiets();
         },
-        error: error => this.error.set(this.resolveError(error)),
+        error: error => this.error.set(this.resolveError(error, 'No se pudo crear la dieta.')),
+      });
+  }
+
+  protected deleteDiet(diet: Diet): void {
+    this.deletingId.set(diet.id);
+    this.listError.set(null);
+
+    this.dietService.deleteDiet(diet.id)
+      .pipe(finalize(() => this.deletingId.set(null)))
+      .subscribe({
+        next: () => this.loadDiets(),
+        error: error => this.listError.set(this.resolveError(error, 'No se pudo eliminar la dieta.')),
       });
   }
 
@@ -67,7 +104,7 @@ export class DietCreatePage {
     };
   }
 
-  private resolveError(error: unknown): string {
+  private resolveError(error: unknown, fallback: string): string {
     if (error instanceof HttpErrorResponse) {
       if (typeof error.error === 'string' && error.error.trim().length > 0) {
         return error.error;
@@ -82,6 +119,6 @@ export class DietCreatePage {
       }
     }
 
-    return 'No se pudo crear la dieta.';
+    return fallback;
   }
 }

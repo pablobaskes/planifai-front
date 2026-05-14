@@ -16,11 +16,19 @@ export class DietService {
     return this.http.post<Diet>(this.baseUrl, request);
   }
 
+  getAllDiets(): Observable<Diet[]> {
+    return this.http.get<Diet[]>(this.baseUrl);
+  }
+
   getDietsByDateRange(from: string, to: string): Observable<Diet[]> {
     const params = new HttpParams()
       .set('from', from)
       .set('to', to);
     return this.http.get<Diet[]>(`${this.baseUrl}/range`, { params });
+  }
+
+  deleteDiet(dietId: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${dietId}`);
   }
 
   overrideMealSlotRecipe(slotId: number, recipeId: number): Observable<MealSlot> {

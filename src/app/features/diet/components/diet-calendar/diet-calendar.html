@@ -23,6 +23,14 @@
       <div class="error">{{ overrideError() }}</div>
     }
 
+    <section class="diet-summary" aria-label="Dieta actual">
+      <div>
+        <span class="summary-label">Dieta actual</span>
+        <h3>{{ diet()?.name }}</h3>
+      </div>
+      <p>{{ diet()?.initDate }} - {{ diet()?.endDate }}</p>
+    </section>
+
     <table class="calendar-table">
       <thead>
         <tr>

@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { of, throwError } from 'rxjs';
 
 import { DietService } from '../../services/diet.service';
@@ -11,13 +10,21 @@ describe('DietCreatePage', () => {
   let fixture: ComponentFixture<DietCreatePage>;
   let dietService: {
     createDiet: ReturnType<typeof vi.fn>;
-  };
-  let router: {
-    navigate: ReturnType<typeof vi.fn>;
+    getAllDiets: ReturnType<typeof vi.fn>;
+    deleteDiet: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
     dietService = {
+      getAllDiets: vi.fn().mockReturnValue(of([{
+        id: 1,
+        name: 'Wave 1 Diet',
+        description: 'Generated',
+        caloriesTarget: 2000,
+        initDate: '2026-05-11',
+        endDate: '2026-05-17',
+        days: [],
+      }])),
       createDiet: vi.fn().mockReturnValue(of({
         id: 1,
         name: 'Wave 1 Diet',
@@ -27,16 +34,13 @@ describe('DietCreatePage', () => {
         endDate: '2026-05-17',
         days: [],
       })),
-    };
-    router = {
-      navigate: vi.fn().mockResolvedValue(true),
+      deleteDiet: vi.fn().mockReturnValue(of(null)),
     };
 
     await TestBed.configureTestingModule({
       imports: [DietCreatePage],
       providers: [
         { provide: DietService, useValue: dietService },
-        { provide: Router, useValue: router },
       ],
     }).compileComponents();
 
@@ -49,7 +53,15 @@ describe('DietCreatePage', () => {
     expect(component).toBeTruthy();
   });
 
-  it('submits a diet and redirects to the calendar', () => {
+  it('loads created diets', () => {
+    fixture.detectChanges();
+
+    expect(dietService.getAllDiets).toHaveBeenCalled();
+    expect(fixture.nativeElement.textContent).toContain('Wave 1 Diet');
+    expect(fixture.nativeElement.textContent).toContain('2026-05-11 - 2026-05-17');
+  });
+
+  it('submits a diet and refreshes the list', () => {
     const form = component['dietForm'];
 
     form.setValue({
@@ -69,7 +81,23 @@ describe('DietCreatePage', () => {
       endDate: '2026-05-17',
       caloriesTarget: 2000,
     });
-    expect(router.navigate).toHaveBeenCalledWith(['/diet/calendar']);
+    expect(dietService.getAllDiets).toHaveBeenCalled();
+  });
+
+  it('deletes a diet and refreshes the list', () => {
+    const diet = {
+      id: 1,
+      name: 'Wave 1 Diet',
+      caloriesTarget: 2000,
+      initDate: '2026-05-11',
+      endDate: '2026-05-17',
+      days: [],
+    };
+
+    component['deleteDiet'](diet);
+
+    expect(dietService.deleteDiet).toHaveBeenCalledWith(1);
+    expect(dietService.getAllDiets).toHaveBeenCalled();
   });
 
   it('shows backend validation errors', () => {

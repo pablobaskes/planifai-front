@@ -48,6 +48,32 @@ describe('DietService', () => {
     httpRequest.flush({ id: 1, ...request, days: [] });
   });
 
+  it('lists and deletes diets through the API', () => {
+    service.getAllDiets().subscribe(diets => {
+      expect(diets.length).toBe(1);
+      expect(diets[0].name).toBe('Wave 1 Diet');
+    });
+
+    const listRequest = httpMock.expectOne(baseUrl);
+    expect(listRequest.request.method).toBe('GET');
+    listRequest.flush([{
+      id: 1,
+      name: 'Wave 1 Diet',
+      caloriesTarget: 2000,
+      initDate: '2026-05-11',
+      endDate: '2026-05-17',
+      days: [],
+    }]);
+
+    service.deleteDiet(1).subscribe(response => {
+      expect(response).toBeNull();
+    });
+
+    const deleteRequest = httpMock.expectOne(`${baseUrl}/1`);
+    expect(deleteRequest.request.method).toBe('DELETE');
+    deleteRequest.flush(null);
+  });
+
   it('overrides a meal slot recipe through the API', () => {
     service.overrideMealSlotRecipe(10, 20).subscribe(slot => {
       expect(slot.id).toBe(10);
