@@ -3,7 +3,14 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
-import { Expense, FinanceDashboard, Income } from '../models/finance.model';
+import {
+  Expense,
+  FinanceDashboard,
+  Income,
+  MonthlyObligationsSummary,
+  RecurringExpense,
+  RecurringExpenseRequest,
+} from '../models/finance.model';
 
 @Injectable({ providedIn: 'root' })
 export class FinanceService {
@@ -23,5 +30,26 @@ export class FinanceService {
   getDashboard(month: string): Observable<FinanceDashboard> {
     const params = new HttpParams().set('month', month);
     return this.http.get<FinanceDashboard>(`${this.baseUrl}/dashboard`, { params });
+  }
+
+  getRecurringExpenses(): Observable<RecurringExpense[]> {
+    return this.http.get<RecurringExpense[]>(`${this.baseUrl}/recurring-expenses`);
+  }
+
+  createRecurringExpense(request: RecurringExpenseRequest): Observable<RecurringExpense> {
+    return this.http.post<RecurringExpense>(`${this.baseUrl}/recurring-expenses`, request);
+  }
+
+  updateRecurringExpense(id: number, request: RecurringExpenseRequest): Observable<RecurringExpense> {
+    return this.http.put<RecurringExpense>(`${this.baseUrl}/recurring-expenses/${id}`, request);
+  }
+
+  deleteRecurringExpense(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/recurring-expenses/${id}`);
+  }
+
+  getMonthlyObligationsSummary(month: string): Observable<MonthlyObligationsSummary> {
+    const params = new HttpParams().set('month', month);
+    return this.http.get<MonthlyObligationsSummary>(`${this.baseUrl}/obligations/monthly-summary`, { params });
   }
 }
