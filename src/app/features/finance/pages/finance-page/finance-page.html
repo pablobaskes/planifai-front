@@ -54,6 +54,68 @@
     No hay datos financieros para {{ selectedMonth() }}. El dashboard muestra valores a cero.
   </p>
 
+  <section class="section obligations-section" *ngIf="!loading() && obligationsSummary() as summary">
+    <div class="section-header">
+      <h2>Obligaciones del mes</h2>
+      <span>{{ summary.month }}</span>
+    </div>
+
+    <div class="dashboard obligations-dashboard">
+      <article class="metric-card">
+        <span>Obligaciones recurrentes</span>
+        <strong>{{ summary.totalRecurringObligations | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>Pendientes</span>
+        <strong>{{ summary.pendingObligations | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>Registradas</span>
+        <strong>{{ summary.paidOrRegisteredObligations | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+      <article class="metric-card" [class.negative]="summary.realAvailableMoney < 0">
+        <span>Dinero realmente disponible</span>
+        <strong>{{ summary.realAvailableMoney | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+    </div>
+
+    <div class="section-header payments-header">
+      <h3>Proximos pagos</h3>
+      <span *ngIf="summary.upcomingPayments.length > 0">{{ summary.upcomingPayments.length }} pagos previstos</span>
+    </div>
+
+    <table *ngIf="summary.upcomingPayments.length > 0; else noUpcomingPayments">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Importe</th>
+          <th>Categoria</th>
+          <th>Fecha prevista</th>
+          <th>Dia pago</th>
+          <th>Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let payment of summary.upcomingPayments; trackBy: trackUpcomingPayment">
+          <td>{{ payment.name }}</td>
+          <td>{{ payment.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
+          <td>{{ payment.category }}</td>
+          <td>{{ payment.dueDate }}</td>
+          <td>{{ payment.paymentDay }}</td>
+          <td>
+            <span class="status-pill" [ngClass]="obligationStatusClass(payment.status)">
+              {{ obligationStatusLabel(payment.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <ng-template #noUpcomingPayments>
+      <p class="empty-state">No hay proximas obligaciones para {{ selectedMonth() }}.</p>
+    </ng-template>
+  </section>
+
   <section class="section breakdown-section" *ngIf="!loading() && dashboard() as dashboard">
     <div class="section-header">
       <h2>Gastos por categoria</h2>
@@ -78,6 +140,181 @@
     <ng-template #noCategoryExpenses>
       <p class="empty-state">No hay gastos por categoria para {{ selectedMonth() }}.</p>
     </ng-template>
+  </section>
+
+  <section class="section recurring-section">
+    <div class="section-header">
+      <h2>Gastos recurrentes</h2>
+      <span *ngIf="recurringExpenses().length > 0">{{ recurringExpenses().length }} obligaciones</span>
+    </div>
+
+    <p *ngIf="recurringError()" class="error">{{ recurringError() }}</p>
+    <p *ngIf="recurringLoading()" class="loading">Cargando gastos recurrentes...</p>
+
+    <form class="recurring-form" (ngSubmit)="submitRecurringExpense()">
+      <div class="form-grid">
+        <label>
+          Nombre
+          <input
+            type="text"
+            name="recurring-name"
+            [ngModel]="recurringForm().name"
+            (ngModelChange)="updateRecurringForm('name', $event)"
+            [disabled]="recurringSaving()"
+            required
+          >
+        </label>
+        <label>
+          Importe
+          <input
+            type="number"
+            name="recurring-amount"
+            min="0.01"
+            step="0.01"
+            [ngModel]="recurringForm().amount"
+            (ngModelChange)="updateRecurringForm('amount', $event)"
+            [disabled]="recurringSaving()"
+            required
+          >
+        </label>
+        <label>
+          Categoria
+          <select
+            name="recurring-category"
+            [ngModel]="recurringForm().category"
+            (ngModelChange)="updateRecurringForm('category', $event)"
+            [disabled]="recurringSaving()"
+          >
+            <option *ngFor="let category of recurringCategories" [value]="category">{{ category }}</option>
+          </select>
+        </label>
+        <label>
+          Recurrencia
+          <select
+            name="recurring-recurrence"
+            [ngModel]="recurringForm().recurrence"
+            (ngModelChange)="updateRecurringForm('recurrence', $event)"
+            [disabled]="recurringSaving()"
+          >
+            <option *ngFor="let recurrence of recurringRecurrences" [value]="recurrence">{{ recurrence }}</option>
+          </select>
+        </label>
+        <label>
+          Dia de pago
+          <input
+            type="number"
+            name="recurring-payment-day"
+            min="1"
+            max="31"
+            step="1"
+            [ngModel]="recurringForm().paymentDay"
+            (ngModelChange)="updateRecurringForm('paymentDay', $event)"
+            [disabled]="recurringSaving()"
+            required
+          >
+        </label>
+        <label>
+          Inicio
+          <input
+            type="date"
+            name="recurring-start-date"
+            [ngModel]="recurringForm().startDate"
+            (ngModelChange)="updateRecurringForm('startDate', $event)"
+            [disabled]="recurringSaving()"
+            required
+          >
+        </label>
+        <label>
+          Fin
+          <input
+            type="date"
+            name="recurring-end-date"
+            [ngModel]="recurringForm().endDate"
+            (ngModelChange)="updateRecurringForm('endDate', $event)"
+            [disabled]="recurringSaving()"
+          >
+        </label>
+        <label>
+          Notas
+          <input
+            type="text"
+            name="recurring-notes"
+            [ngModel]="recurringForm().notes"
+            (ngModelChange)="updateRecurringForm('notes', $event)"
+            [disabled]="recurringSaving()"
+          >
+        </label>
+      </div>
+
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          name="recurring-active"
+          [ngModel]="recurringForm().active"
+          (ngModelChange)="updateRecurringForm('active', $event)"
+          [disabled]="recurringSaving()"
+        >
+        Activo
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="recurringSaving()">
+          {{ isEditingRecurringExpense() ? 'Guardar cambios' : 'Crear gasto recurrente' }}
+        </button>
+        <button
+          *ngIf="isEditingRecurringExpense()"
+          type="button"
+          class="secondary-button"
+          (click)="cancelRecurringExpenseEdit()"
+          [disabled]="recurringSaving()"
+        >
+          Cancelar
+        </button>
+        <button type="button" class="secondary-button" (click)="loadRecurringExpenses()" [disabled]="recurringLoading() || recurringSaving()">
+          Actualizar lista
+        </button>
+      </div>
+    </form>
+
+    <table *ngIf="!recurringLoading() && recurringExpenses().length > 0">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Importe</th>
+          <th>Categoria</th>
+          <th>Recurrencia</th>
+          <th>Dia pago</th>
+          <th>Activo</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let recurringExpense of recurringExpenses(); trackBy: trackRecurringExpense">
+          <td>{{ recurringExpense.name }}</td>
+          <td>{{ recurringExpense.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
+          <td>{{ recurringExpense.category }}</td>
+          <td>{{ recurringExpense.recurrence }}</td>
+          <td>{{ recurringExpense.paymentDay }}</td>
+          <td>
+            <span class="status-pill" [class.inactive]="!recurringExpense.active">
+              {{ recurringExpense.active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td class="row-actions">
+            <button type="button" class="secondary-button" (click)="editRecurringExpense(recurringExpense)" [disabled]="recurringSaving()">
+              Editar
+            </button>
+            <button type="button" class="danger-button" (click)="deleteRecurringExpense(recurringExpense)" [disabled]="recurringSaving()">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!recurringLoading() && recurringExpenses().length === 0" class="empty-state">
+      No hay gastos recurrentes registrados.
+    </p>
   </section>
 
   <section class="section">
