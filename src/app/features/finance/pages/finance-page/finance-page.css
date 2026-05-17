@@ -11,6 +11,110 @@
   gap: 16px;
 }
 
+.page-header h1 {
+  margin: 0;
+}
+
+.page-header p {
+  color: #57606a;
+  margin: 6px 0 0;
+}
+
+.header-actions {
+  align-items: end;
+  display: flex;
+  gap: 12px;
+}
+
+.header-actions label {
+  color: #57606a;
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.header-actions input {
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+  font: inherit;
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.dashboard {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin-top: 24px;
+}
+
+.metric-card {
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+  background: #ffffff;
+  min-height: 116px;
+  padding: 16px;
+}
+
+.metric-card span {
+  color: #57606a;
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.metric-card strong {
+  color: #1f2328;
+  display: block;
+  font-size: 1.5rem;
+  line-height: 1.2;
+}
+
+.metric-card small {
+  color: #57606a;
+  display: block;
+  line-height: 1.35;
+  margin-top: 8px;
+}
+
+.metric-card.negative strong {
+  color: #b91c1c;
+}
+
+.health-card {
+  border-left: 6px solid #8c959f;
+}
+
+.health-good {
+  border-left-color: #1a7f37;
+}
+
+.health-warning {
+  border-left-color: #bf8700;
+}
+
+.health-bad {
+  border-left-color: #cf222e;
+}
+
+.health-no-data {
+  border-left-color: #8c959f;
+}
+
+.health-good strong {
+  color: #1a7f37;
+}
+
+.health-warning strong {
+  color: #9a6700;
+}
+
+.health-bad strong {
+  color: #b91c1c;
+}
+
 .section {
   margin-top: 24px;
 }
@@ -47,6 +151,28 @@ th {
 }
 
 .error {
+  background: #fff1f2;
+  border: 1px solid #fecdd3;
+  border-radius: 8px;
   color: #b91c1c;
   font-weight: 700;
+  padding: 12px 14px;
+}
+
+.loading,
+.empty-state {
+  background: #f6f8fa;
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+  color: #57606a;
+  margin-top: 18px;
+  padding: 12px 14px;
+}
+
+@media (max-width: 700px) {
+  .page-header,
+  .header-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
 }

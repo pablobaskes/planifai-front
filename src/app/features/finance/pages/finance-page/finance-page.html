@@ -1,11 +1,52 @@
 <main class="page-shell">
   <header class="page-header">
-    <h1>Finanzas</h1>
-    <button type="button" (click)="loadFinance()" [disabled]="loading()">Actualizar</button>
+    <div>
+      <h1>Finanzas</h1>
+      <p>Resumen financiero mensual</p>
+    </div>
+    <div class="header-actions">
+      <label>
+        Mes
+        <input type="month" [value]="selectedMonth()" (change)="onMonthChange($event)" [disabled]="loading()">
+      </label>
+      <button type="button" (click)="loadFinance()" [disabled]="loading()">Actualizar</button>
+    </div>
   </header>
 
   <p *ngIf="error()" class="error">{{ error() }}</p>
-  <p *ngIf="loading()">Cargando finanzas...</p>
+  <p *ngIf="loading()" class="loading">Cargando finanzas...</p>
+
+  <section class="dashboard" *ngIf="!loading() && dashboard() as dashboard">
+    <article class="metric-card">
+      <span>Ingresos del mes</span>
+      <strong>{{ dashboard.totalIncome | currency:'EUR':'symbol':'1.2-2' }}</strong>
+    </article>
+    <article class="metric-card">
+      <span>Gastos del mes</span>
+      <strong>{{ dashboard.totalExpenses | currency:'EUR':'symbol':'1.2-2' }}</strong>
+    </article>
+    <article class="metric-card" [class.negative]="dashboard.netBalance < 0">
+      <span>Balance neto</span>
+      <strong>{{ dashboard.netBalance | currency:'EUR':'symbol':'1.2-2' }}</strong>
+    </article>
+    <article class="metric-card" [class.negative]="dashboard.savingsAmount < 0">
+      <span>Ahorro</span>
+      <strong>{{ dashboard.savingsAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+    </article>
+    <article class="metric-card" [class.negative]="dashboard.savingsRate < 0">
+      <span>Porcentaje de ahorro</span>
+      <strong>{{ dashboard.savingsRate | number:'1.2-2' }}%</strong>
+    </article>
+    <article class="metric-card health-card" [ngClass]="healthClass(dashboard.healthStatus)">
+      <span>Salud financiera</span>
+      <strong>{{ healthLabel(dashboard.healthStatus) }}</strong>
+      <small>{{ healthDescription(dashboard.healthStatus) }}</small>
+    </article>
+  </section>
+
+  <p *ngIf="!loading() && !error() && isEmptyDashboard(dashboard())" class="empty-state">
+    No hay datos financieros para {{ selectedMonth() }}. El dashboard muestra valores a cero.
+  </p>
 
   <section class="section">
     <h2>Gastos</h2>

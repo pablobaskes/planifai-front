@@ -18,6 +18,8 @@ export type IncomeCategory =
 
 export type Recurrence = 'ONE_OFF' | 'MONTHLY' | 'YEARLY';
 
+export type FinancialHealthStatus = 'GOOD' | 'WARNING' | 'BAD' | 'NO_DATA';
+
 export interface Expense {
   id: number;
   concept: string;
@@ -36,4 +38,21 @@ export interface Income {
   category: IncomeCategory;
   recurrence: Recurrence;
   notes?: string | null;
+}
+
+export interface ExpenseCategoryBreakdown {
+  category: ExpenseCategory;
+  totalAmount: number;
+  percentage: number;
+}
+
+export interface FinanceDashboard {
+  month: string;
+  totalIncome: number;
+  totalExpenses: number;
+  netBalance: number;
+  savingsAmount: number;
+  savingsRate: number;
+  healthStatus: FinancialHealthStatus;
+  expensesByCategory: ExpenseCategoryBreakdown[];
 }
