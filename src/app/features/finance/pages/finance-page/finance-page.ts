@@ -67,12 +67,25 @@ export class FinancePage implements OnInit {
 
   protected onMonthChange(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (!input.value || input.value === this.selectedMonth()) {
+    if (!this.isValidMonth(input.value)) {
+      input.value = this.selectedMonth();
+      return;
+    }
+
+    if (input.value === this.selectedMonth()) {
       return;
     }
 
     this.selectedMonth.set(input.value);
     this.loadFinance();
+  }
+
+  protected goToPreviousMonth(): void {
+    this.moveMonth(-1);
+  }
+
+  protected goToNextMonth(): void {
+    this.moveMonth(1);
   }
 
   protected isEmptyDashboard(dashboard: FinanceDashboard | null): boolean {
@@ -127,5 +140,17 @@ export class FinancePage implements OnInit {
     const today = new Date();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     return `${today.getFullYear()}-${month}`;
+  }
+
+  private moveMonth(offset: number): void {
+    const [year, month] = this.selectedMonth().split('-').map(Number);
+    const nextDate = new Date(year, month - 1 + offset, 1);
+    const nextMonth = String(nextDate.getMonth() + 1).padStart(2, '0');
+    this.selectedMonth.set(`${nextDate.getFullYear()}-${nextMonth}`);
+    this.loadFinance();
+  }
+
+  private isValidMonth(value: string): boolean {
+    return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
   }
 }

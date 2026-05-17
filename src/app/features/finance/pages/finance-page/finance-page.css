@@ -205,6 +205,12 @@ button:disabled {
   opacity: 0.65;
 }
 
+.secondary-button {
+  background: #f6f8fa;
+  border: 1px solid #c9d1d9;
+  color: #1f2328;
+}
+
 table {
   border-collapse: collapse;
   width: 100%;

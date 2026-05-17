@@ -5,10 +5,16 @@
       <p>Resumen financiero mensual</p>
     </div>
     <div class="header-actions">
+      <button type="button" class="secondary-button" (click)="goToPreviousMonth()" [disabled]="loading()">
+        Anterior
+      </button>
       <label>
         Mes
         <input type="month" [value]="selectedMonth()" (change)="onMonthChange($event)" [disabled]="loading()">
       </label>
+      <button type="button" class="secondary-button" (click)="goToNextMonth()" [disabled]="loading()">
+        Siguiente
+      </button>
       <button type="button" (click)="loadFinance()" [disabled]="loading()">Actualizar</button>
     </div>
   </header>
