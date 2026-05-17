@@ -48,6 +48,32 @@
     No hay datos financieros para {{ selectedMonth() }}. El dashboard muestra valores a cero.
   </p>
 
+  <section class="section breakdown-section" *ngIf="!loading() && dashboard() as dashboard">
+    <div class="section-header">
+      <h2>Gastos por categoria</h2>
+      <span *ngIf="dashboard.expensesByCategory.length > 0">
+        {{ dashboard.expensesByCategory.length }} categorias con gasto
+      </span>
+    </div>
+
+    <div *ngIf="dashboard.expensesByCategory.length > 0; else noCategoryExpenses" class="breakdown-list">
+      <article class="breakdown-row" *ngFor="let item of dashboard.expensesByCategory; trackBy: trackCategoryBreakdown">
+        <div class="breakdown-main">
+          <strong>{{ item.category }}</strong>
+          <span>{{ item.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</span>
+        </div>
+        <div class="bar-track" aria-hidden="true">
+          <div class="bar-fill" [style.width.%]="item.percentage"></div>
+        </div>
+        <small>{{ item.percentage | number:'1.2-2' }}% del gasto mensual</small>
+      </article>
+    </div>
+
+    <ng-template #noCategoryExpenses>
+      <p class="empty-state">No hay gastos por categoria para {{ selectedMonth() }}.</p>
+    </ng-template>
+  </section>
+
   <section class="section">
     <h2>Gastos</h2>
     <table *ngIf="!loading() && expenses().length > 0">

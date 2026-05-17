@@ -3,7 +3,13 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { finalize, forkJoin } from 'rxjs';
 
-import { Expense, FinanceDashboard, FinancialHealthStatus, Income } from '../../models/finance.model';
+import {
+  Expense,
+  ExpenseCategoryBreakdown,
+  FinanceDashboard,
+  FinancialHealthStatus,
+  Income,
+} from '../../models/finance.model';
 import { FinanceService } from '../../services/finance.service';
 
 @Component({
@@ -53,6 +59,10 @@ export class FinancePage implements OnInit {
 
   protected trackIncome(_index: number, income: Income): number {
     return income.id;
+  }
+
+  protected trackCategoryBreakdown(_index: number, breakdown: ExpenseCategoryBreakdown): string {
+    return breakdown.category;
   }
 
   protected onMonthChange(event: Event): void {
