@@ -1,19 +1,26 @@
-export type ExpenseCategory =
-  | 'MORTGAGE'
-  | 'RENTAL_PROPERTY'
-  | 'UTILITIES'
-  | 'GROCERIES'
+export type FinanceCategory =
+  | 'FOOD'
+  | 'RESTAURANTS'
   | 'TRANSPORT'
   | 'HEALTH'
-  | 'LEISURE'
-  | 'TAXES'
-  | 'OTHER';
+  | 'EDUCATION'
+  | 'SUBSCRIPTIONS'
+  | 'SAVINGS'
+  | 'ENTERTAINMENT'
+  | 'TRAVEL'
+  | 'PETS'
+  | 'OTHER'
+  | 'HOUSING'
+  | 'UTILITIES';
+
+export type ExpenseCategory = FinanceCategory;
 
 export type IncomeCategory =
   | 'SALARY'
   | 'RENTAL_INCOME'
   | 'FREELANCE'
   | 'INVESTMENT'
+  | 'SAVINGS'
   | 'OTHER';
 
 export type Recurrence = 'ONE_OFF' | 'MONTHLY' | 'YEARLY';
@@ -34,6 +41,15 @@ export interface Expense {
   notes?: string | null;
 }
 
+export interface ExpenseRequest {
+  concept: string;
+  amount: number;
+  expenseDate: string;
+  category: ExpenseCategory;
+  recurrence?: Recurrence | null;
+  notes?: string | null;
+}
+
 export interface Income {
   id: number;
   source: string;
@@ -48,6 +64,23 @@ export interface ExpenseCategoryBreakdown {
   category: ExpenseCategory;
   totalAmount: number;
   percentage: number;
+}
+
+export interface FinanceCategoryOption {
+  code: FinanceCategory;
+  label: string;
+}
+
+export interface FinanceCategoryStatistic {
+  category: FinanceCategory;
+  amount: number;
+  percentage: number;
+}
+
+export interface FinanceCategoryStatistics {
+  month: string;
+  totalExpenses: number;
+  categories: FinanceCategoryStatistic[];
 }
 
 export interface FinanceDashboard {

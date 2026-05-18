@@ -99,7 +99,7 @@
         <tr *ngFor="let payment of summary.upcomingPayments; trackBy: trackUpcomingPayment">
           <td>{{ payment.name }}</td>
           <td>{{ payment.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
-          <td>{{ payment.category }}</td>
+          <td><span class="category-pill">{{ categoryLabel(payment.category) }}</span></td>
           <td>{{ payment.dueDate }}</td>
           <td>{{ payment.paymentDay }}</td>
           <td>
@@ -116,19 +116,19 @@
     </ng-template>
   </section>
 
-  <section class="section breakdown-section" *ngIf="!loading() && dashboard() as dashboard">
+  <section class="section breakdown-section" *ngIf="!loading() && categoryStatistics() as statistics">
     <div class="section-header">
       <h2>Gastos por categoria</h2>
-      <span *ngIf="dashboard.expensesByCategory.length > 0">
-        {{ dashboard.expensesByCategory.length }} categorias con gasto
+      <span *ngIf="statistics.categories.length > 0">
+        {{ statistics.categories.length }} categorias con gasto
       </span>
     </div>
 
-    <div *ngIf="dashboard.expensesByCategory.length > 0; else noCategoryExpenses" class="breakdown-list">
-      <article class="breakdown-row" *ngFor="let item of dashboard.expensesByCategory; trackBy: trackCategoryBreakdown">
+    <div *ngIf="statistics.categories.length > 0; else noCategoryExpenses" class="breakdown-list">
+      <article class="breakdown-row" *ngFor="let item of statistics.categories; trackBy: trackCategoryStatistic">
         <div class="breakdown-main">
-          <strong>{{ item.category }}</strong>
-          <span>{{ item.totalAmount | currency:'EUR':'symbol':'1.2-2' }}</span>
+          <strong>{{ categoryLabel(item.category) }}</strong>
+          <span>{{ item.amount | currency:'EUR':'symbol':'1.2-2' }}</span>
         </div>
         <div class="bar-track" aria-hidden="true">
           <div class="bar-fill" [style.width.%]="item.percentage"></div>
@@ -140,6 +140,80 @@
     <ng-template #noCategoryExpenses>
       <p class="empty-state">No hay gastos por categoria para {{ selectedMonth() }}.</p>
     </ng-template>
+  </section>
+
+  <section class="section transaction-section">
+    <div class="section-header">
+      <h2>Nuevo gasto</h2>
+    </div>
+
+    <p *ngIf="expenseError()" class="error">{{ expenseError() }}</p>
+
+    <form class="finance-form" (ngSubmit)="submitExpense()">
+      <div class="form-grid">
+        <label>
+          Concepto
+          <input
+            type="text"
+            name="expense-concept"
+            [ngModel]="expenseForm().concept"
+            (ngModelChange)="updateExpenseForm('concept', $event)"
+            [disabled]="expenseSaving()"
+            required
+          >
+        </label>
+        <label>
+          Importe
+          <input
+            type="number"
+            name="expense-amount"
+            min="0.01"
+            step="0.01"
+            [ngModel]="expenseForm().amount"
+            (ngModelChange)="updateExpenseForm('amount', $event)"
+            [disabled]="expenseSaving()"
+            required
+          >
+        </label>
+        <label>
+          Categoria
+          <select
+            name="expense-category"
+            [ngModel]="expenseForm().category"
+            (ngModelChange)="updateExpenseForm('category', $event)"
+            [disabled]="expenseSaving()"
+            required
+          >
+            <option *ngFor="let category of financeCategories()" [value]="category.code">{{ category.label }}</option>
+          </select>
+        </label>
+        <label>
+          Fecha
+          <input
+            type="date"
+            name="expense-date"
+            [ngModel]="expenseForm().expenseDate"
+            (ngModelChange)="updateExpenseForm('expenseDate', $event)"
+            [disabled]="expenseSaving()"
+            required
+          >
+        </label>
+        <label>
+          Notas
+          <input
+            type="text"
+            name="expense-notes"
+            [ngModel]="expenseForm().notes"
+            (ngModelChange)="updateExpenseForm('notes', $event)"
+            [disabled]="expenseSaving()"
+          >
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="expenseSaving()">Crear gasto</button>
+      </div>
+    </form>
   </section>
 
   <section class="section recurring-section">
@@ -185,7 +259,7 @@
             (ngModelChange)="updateRecurringForm('category', $event)"
             [disabled]="recurringSaving()"
           >
-            <option *ngFor="let category of recurringCategories" [value]="category">{{ category }}</option>
+            <option *ngFor="let category of financeCategories()" [value]="category.code">{{ category.label }}</option>
           </select>
         </label>
         <label>
@@ -292,7 +366,7 @@
         <tr *ngFor="let recurringExpense of recurringExpenses(); trackBy: trackRecurringExpense">
           <td>{{ recurringExpense.name }}</td>
           <td>{{ recurringExpense.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
-          <td>{{ recurringExpense.category }}</td>
+          <td><span class="category-pill">{{ categoryLabel(recurringExpense.category) }}</span></td>
           <td>{{ recurringExpense.recurrence }}</td>
           <td>{{ recurringExpense.paymentDay }}</td>
           <td>
@@ -335,7 +409,7 @@
           <td>{{ expense.concept }}</td>
           <td>{{ expense.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
           <td>{{ expense.expenseDate }}</td>
-          <td>{{ expense.category }}</td>
+          <td><span class="category-pill">{{ categoryLabel(expense.category) }}</span></td>
           <td>{{ expense.recurrence }}</td>
           <td>{{ expense.notes || '-' }}</td>
         </tr>

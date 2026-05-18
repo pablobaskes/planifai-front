@@ -8,6 +8,9 @@ import {
   Expense,
   ExpenseCategory,
   ExpenseCategoryBreakdown,
+  ExpenseRequest,
+  FinanceCategoryOption,
+  FinanceCategoryStatistics,
   FinanceDashboard,
   FinancialHealthStatus,
   Income,
@@ -31,6 +34,14 @@ interface RecurringExpenseForm {
   notes: string;
 }
 
+interface ExpenseForm {
+  concept: string;
+  amount: number | null;
+  category: ExpenseCategory;
+  expenseDate: string;
+  notes: string;
+}
+
 @Component({
   selector: 'app-finance-page',
   imports: [CommonModule, FormsModule],
@@ -44,30 +55,25 @@ export class FinancePage implements OnInit {
   protected readonly expenses = signal<Expense[]>([]);
   protected readonly incomes = signal<Income[]>([]);
   protected readonly dashboard = signal<FinanceDashboard | null>(null);
+  protected readonly categoryStatistics = signal<FinanceCategoryStatistics | null>(null);
   protected readonly obligationsSummary = signal<MonthlyObligationsSummary | null>(null);
   protected readonly recurringExpenses = signal<RecurringExpense[]>([]);
+  protected readonly financeCategories = signal<FinanceCategoryOption[]>(this.getDefaultFinanceCategories());
   protected readonly selectedMonth = signal(this.getCurrentMonth());
   protected readonly loading = signal(false);
+  protected readonly expenseSaving = signal(false);
   protected readonly recurringLoading = signal(false);
   protected readonly recurringSaving = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly expenseError = signal<string | null>(null);
   protected readonly recurringError = signal<string | null>(null);
   protected readonly editingRecurringExpenseId = signal<number | null>(null);
+  protected readonly expenseForm = signal<ExpenseForm>(this.getEmptyExpenseForm());
   protected readonly recurringForm = signal<RecurringExpenseForm>(this.getEmptyRecurringExpenseForm());
-  protected readonly recurringCategories: ExpenseCategory[] = [
-    'MORTGAGE',
-    'RENTAL_PROPERTY',
-    'UTILITIES',
-    'GROCERIES',
-    'TRANSPORT',
-    'HEALTH',
-    'LEISURE',
-    'TAXES',
-    'OTHER',
-  ];
   protected readonly recurringRecurrences: RecurringExpenseRecurrence[] = ['MONTHLY', 'YEARLY'];
 
   ngOnInit(): void {
+    this.loadFinanceCategories();
     this.loadFinance();
     this.loadRecurringExpenses();
   }
@@ -78,19 +84,32 @@ export class FinancePage implements OnInit {
 
     forkJoin({
       dashboard: this.financeService.getDashboard(this.selectedMonth()),
+      categoryStatistics: this.financeService.getCategoryStatistics(this.selectedMonth()),
       obligationsSummary: this.financeService.getMonthlyObligationsSummary(this.selectedMonth()),
       expenses: this.financeService.getExpenses(),
       incomes: this.financeService.getIncomes(),
     })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ dashboard, obligationsSummary, expenses, incomes }) => {
+        next: ({ dashboard, categoryStatistics, obligationsSummary, expenses, incomes }) => {
           this.dashboard.set(dashboard);
+          this.categoryStatistics.set(categoryStatistics);
           this.obligationsSummary.set(obligationsSummary);
           this.expenses.set(expenses);
           this.incomes.set(incomes);
         },
         error: error => this.error.set(this.resolveError(error)),
+      });
+  }
+
+  protected loadFinanceCategories(): void {
+    this.financeService.getFinanceCategories()
+      .subscribe({
+        next: categories => {
+          if (categories.length > 0) {
+            this.financeCategories.set(categories);
+          }
+        },
       });
   }
 
@@ -120,6 +139,10 @@ export class FinancePage implements OnInit {
 
   protected trackCategoryBreakdown(_index: number, breakdown: ExpenseCategoryBreakdown): string {
     return breakdown.category;
+  }
+
+  protected trackCategoryStatistic(_index: number, statistic: FinanceCategoryStatistics['categories'][number]): string {
+    return statistic.category;
   }
 
   protected trackUpcomingPayment(_index: number, payment: UpcomingPayment): number {
@@ -196,11 +219,43 @@ export class FinancePage implements OnInit {
     return `status-${status.toLowerCase().replace(/_/g, '-')}`;
   }
 
+  protected categoryLabel(category: ExpenseCategory): string {
+    return this.financeCategories().find(option => option.code === category)?.label ?? category;
+  }
+
+  protected updateExpenseForm<K extends keyof ExpenseForm>(
+    field: K,
+    value: ExpenseForm[K],
+  ): void {
+    this.expenseForm.update(form => ({ ...form, [field]: value }));
+  }
+
   protected updateRecurringForm<K extends keyof RecurringExpenseForm>(
     field: K,
     value: RecurringExpenseForm[K],
   ): void {
     this.recurringForm.update(form => ({ ...form, [field]: value }));
+  }
+
+  protected submitExpense(): void {
+    const request = this.toExpenseRequest();
+    if (!request) {
+      return;
+    }
+
+    this.expenseSaving.set(true);
+    this.expenseError.set(null);
+
+    this.financeService.createExpense(request)
+      .pipe(finalize(() => this.expenseSaving.set(false)))
+      .subscribe({
+        next: expense => {
+          this.expenses.update(expenses => [...expenses, expense]);
+          this.resetExpenseForm();
+          this.loadFinance();
+        },
+        error: error => this.expenseError.set(this.resolveError(error, 'No se pudo guardar el gasto.')),
+      });
   }
 
   protected submitRecurringExpense(): void {
@@ -332,6 +387,41 @@ export class FinancePage implements OnInit {
     };
   }
 
+  private toExpenseRequest(): ExpenseRequest | null {
+    const form = this.expenseForm();
+    const amount = Number(form.amount);
+
+    if (!form.concept.trim()) {
+      this.expenseError.set('El concepto del gasto es obligatorio.');
+      return null;
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      this.expenseError.set('El importe debe ser mayor que cero.');
+      return null;
+    }
+    if (!form.expenseDate) {
+      this.expenseError.set('La fecha del gasto es obligatoria.');
+      return null;
+    }
+    if (!this.financeCategories().some(option => option.code === form.category)) {
+      this.expenseError.set('La categoria seleccionada no es valida.');
+      return null;
+    }
+
+    return {
+      concept: form.concept.trim(),
+      amount,
+      expenseDate: form.expenseDate,
+      category: form.category,
+      recurrence: 'ONE_OFF',
+      notes: form.notes.trim() || null,
+    };
+  }
+
+  private resetExpenseForm(): void {
+    this.expenseForm.set(this.getEmptyExpenseForm());
+  }
+
   private resetRecurringForm(): void {
     this.editingRecurringExpenseId.set(null);
     this.recurringForm.set(this.getEmptyRecurringExpenseForm());
@@ -349,6 +439,34 @@ export class FinancePage implements OnInit {
       active: true,
       notes: '',
     };
+  }
+
+  private getEmptyExpenseForm(): ExpenseForm {
+    return {
+      concept: '',
+      amount: null,
+      category: 'OTHER',
+      expenseDate: this.todayAsDateInputValue(),
+      notes: '',
+    };
+  }
+
+  private getDefaultFinanceCategories(): FinanceCategoryOption[] {
+    return [
+      { code: 'FOOD', label: 'Food' },
+      { code: 'RESTAURANTS', label: 'Restaurants' },
+      { code: 'TRANSPORT', label: 'Transport' },
+      { code: 'HEALTH', label: 'Health' },
+      { code: 'EDUCATION', label: 'Education' },
+      { code: 'SUBSCRIPTIONS', label: 'Subscriptions' },
+      { code: 'SAVINGS', label: 'Savings' },
+      { code: 'ENTERTAINMENT', label: 'Entertainment' },
+      { code: 'TRAVEL', label: 'Travel' },
+      { code: 'PETS', label: 'Pets' },
+      { code: 'OTHER', label: 'Other' },
+      { code: 'HOUSING', label: 'Housing' },
+      { code: 'UTILITIES', label: 'Utilities' },
+    ];
   }
 
   private getCurrentMonth(): string {

@@ -5,6 +5,10 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import {
   Expense,
+  ExpenseCategory,
+  ExpenseRequest,
+  FinanceCategoryOption,
+  FinanceCategoryStatistics,
   FinanceDashboard,
   Income,
   MonthlyObligationsSummary,
@@ -19,8 +23,13 @@ export class FinanceService {
 
   constructor(private readonly http: HttpClient) {}
 
-  getExpenses(): Observable<Expense[]> {
-    return this.http.get<Expense[]>(`${this.baseUrl}/expenses`);
+  getExpenses(category?: ExpenseCategory): Observable<Expense[]> {
+    const params = category ? new HttpParams().set('category', category) : undefined;
+    return this.http.get<Expense[]>(`${this.baseUrl}/expenses`, { params });
+  }
+
+  createExpense(request: ExpenseRequest): Observable<Expense> {
+    return this.http.post<Expense>(`${this.baseUrl}/expenses`, request);
   }
 
   getIncomes(): Observable<Income[]> {
@@ -32,8 +41,18 @@ export class FinanceService {
     return this.http.get<FinanceDashboard>(`${this.baseUrl}/dashboard`, { params });
   }
 
-  getRecurringExpenses(): Observable<RecurringExpense[]> {
-    return this.http.get<RecurringExpense[]>(`${this.baseUrl}/recurring-expenses`);
+  getFinanceCategories(): Observable<FinanceCategoryOption[]> {
+    return this.http.get<FinanceCategoryOption[]>(`${this.baseUrl}/categories`);
+  }
+
+  getCategoryStatistics(month: string): Observable<FinanceCategoryStatistics> {
+    const params = new HttpParams().set('month', month);
+    return this.http.get<FinanceCategoryStatistics>(`${this.baseUrl}/statistics/categories`, { params });
+  }
+
+  getRecurringExpenses(category?: ExpenseCategory): Observable<RecurringExpense[]> {
+    const params = category ? new HttpParams().set('category', category) : undefined;
+    return this.http.get<RecurringExpense[]>(`${this.baseUrl}/recurring-expenses`, { params });
   }
 
   createRecurringExpense(request: RecurringExpenseRequest): Observable<RecurringExpense> {
