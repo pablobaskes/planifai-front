@@ -150,6 +150,244 @@
     </ng-template>
   </section>
 
+  <section class="section budget-summary-section" *ngIf="!loading() && budgetSummary() as summary">
+    <div class="section-header">
+      <h2>Resumen de presupuestos</h2>
+      <span>{{ summary.month }}</span>
+    </div>
+
+    <div class="dashboard budget-summary-dashboard">
+      <article class="metric-card">
+        <span>Presupuestado</span>
+        <strong>{{ summary.totalLimitAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+      <article class="metric-card">
+        <span>Consumido</span>
+        <strong>{{ summary.totalConsumedAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+        <small>{{ summary.overallConsumptionPercentage | number:'1.2-2' }}% del presupuesto</small>
+      </article>
+      <article class="metric-card" [class.negative]="summary.totalRemainingAmount < 0">
+        <span>Restante</span>
+        <strong>{{ summary.totalRemainingAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+      <article class="metric-card" [class.negative]="summary.totalOverspentAmount > 0">
+        <span>Sobrepasado</span>
+        <strong>{{ summary.totalOverspentAmount | currency:'EUR':'symbol':'1.2-2' }}</strong>
+      </article>
+    </div>
+
+    <div *ngIf="summary.categories.length > 0; else noBudgetSummary" class="budget-category-list">
+      <article
+        class="budget-category-row"
+        *ngFor="let categoryStatus of summary.categories; trackBy: trackBudgetCategoryStatus"
+        [ngClass]="budgetStatusClass(categoryStatus.status)"
+      >
+        <div class="budget-category-main">
+          <strong class="category-heading">
+            <span class="category-mark" [ngClass]="categoryClass(categoryStatus.category)">
+              {{ categoryShortCode(categoryStatus.category) }}
+            </span>
+            {{ categoryLabel(categoryStatus.category) }}
+          </strong>
+          <span class="status-pill" [ngClass]="budgetStatusClass(categoryStatus.status)">
+            {{ budgetStatusLabel(categoryStatus.status) }}
+          </span>
+        </div>
+
+        <div class="budget-category-metrics">
+          <span>Limite {{ categoryStatus.limitAmount | currency:'EUR':'symbol':'1.2-2' }}</span>
+          <span>Consumido {{ categoryStatus.consumedAmount | currency:'EUR':'symbol':'1.2-2' }}</span>
+          <span>Restante {{ categoryStatus.remainingAmount | currency:'EUR':'symbol':'1.2-2' }}</span>
+        </div>
+
+        <div class="budget-progress-track" aria-hidden="true">
+          <div
+            class="budget-progress-fill"
+            [ngClass]="budgetStatusClass(categoryStatus.status)"
+            [style.width.%]="budgetProgressWidth(categoryStatus.consumptionPercentage)"
+          ></div>
+        </div>
+        <small>
+          {{ categoryStatus.consumptionPercentage | number:'1.2-2' }}% consumido
+          <span *ngIf="categoryStatus.overspentAmount > 0">
+            - {{ categoryStatus.overspentAmount | currency:'EUR':'symbol':'1.2-2' }} sobre el limite
+          </span>
+        </small>
+      </article>
+    </div>
+
+    <ng-template #noBudgetSummary>
+      <p class="empty-state">No hay presupuestos activos para resumir en {{ selectedMonth() }}.</p>
+    </ng-template>
+
+    <div class="budget-alerts" *ngIf="summary.alerts.length > 0">
+      <div class="section-header payments-header">
+        <h3>Alertas de presupuesto</h3>
+        <span>{{ summary.alerts.length }} alertas</span>
+      </div>
+      <article
+        class="budget-alert"
+        *ngFor="let alert of summary.alerts; trackBy: trackBudgetAlert"
+        [ngClass]="budgetAlertClass(alert)"
+      >
+        <div>
+          <strong>{{ budgetAlertLabel(alert) }}</strong>
+          <span class="category-pill" [ngClass]="categoryClass(alert.category)">
+            <span class="category-mark">{{ categoryShortCode(alert.category) }}</span>
+            {{ categoryLabel(alert.category) }}
+          </span>
+        </div>
+        <p>{{ alert.message }}</p>
+        <small>
+          Consumido {{ alert.consumedAmount | currency:'EUR':'symbol':'1.2-2' }}
+          de {{ alert.limitAmount | currency:'EUR':'symbol':'1.2-2' }}
+          - umbral {{ alert.threshold | number:'1.0-2' }}%
+        </small>
+      </article>
+    </div>
+  </section>
+
+  <section class="section budgets-section">
+    <div class="section-header">
+      <h2>Presupuestos</h2>
+      <span>{{ selectedMonth() }}</span>
+    </div>
+
+    <p *ngIf="budgetError()" class="error">{{ budgetError() }}</p>
+    <p *ngIf="loading()" class="loading">Cargando presupuestos...</p>
+
+    <form class="budget-form" (ngSubmit)="submitBudget()">
+      <div class="form-grid">
+        <label>
+          Mes
+          <input
+            type="month"
+            name="budget-month"
+            [value]="selectedMonth()"
+            disabled
+          >
+        </label>
+        <label>
+          Limite
+          <input
+            type="number"
+            name="budget-limit"
+            min="0.01"
+            step="0.01"
+            [ngModel]="budgetForm().limitAmount"
+            (ngModelChange)="updateBudgetForm('limitAmount', $event)"
+            [disabled]="budgetSaving() || loading()"
+            required
+          >
+        </label>
+        <label>
+          Notas
+          <input
+            type="text"
+            name="budget-notes"
+            [ngModel]="budgetForm().notes"
+            (ngModelChange)="updateBudgetForm('notes', $event)"
+            [disabled]="budgetSaving() || loading()"
+          >
+        </label>
+        <fieldset class="category-picker">
+          <legend>Categoria</legend>
+          <label
+            class="category-choice"
+            *ngFor="let category of financeCategories()"
+            [class.selected]="budgetForm().category === category.code"
+            [class.unavailable]="isBudgetCategoryUnavailable(category.code)"
+            [ngClass]="categoryClass(category.code)"
+          >
+            <input
+              type="radio"
+              name="budget-category"
+              [ngModel]="budgetForm().category"
+              (ngModelChange)="updateBudgetForm('category', $event)"
+              [value]="category.code"
+              [disabled]="budgetSaving() || loading()"
+              required
+            >
+            <span class="category-mark">{{ categoryShortCode(category.code) }}</span>
+            <span>{{ categoryLabel(category.code) }}</span>
+          </label>
+        </fieldset>
+      </div>
+
+      <label class="checkbox-row">
+        <input
+          type="checkbox"
+          name="budget-active"
+          [ngModel]="budgetForm().active"
+          (ngModelChange)="updateBudgetForm('active', $event)"
+          [disabled]="budgetSaving() || loading()"
+        >
+        Activo
+      </label>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="budgetSaving() || loading()">
+          {{ isEditingBudget() ? 'Guardar cambios' : 'Crear presupuesto' }}
+        </button>
+        <button
+          *ngIf="isEditingBudget()"
+          type="button"
+          class="secondary-button"
+          (click)="cancelBudgetEdit()"
+          [disabled]="budgetSaving()"
+        >
+          Cancelar
+        </button>
+        <button type="button" class="secondary-button" (click)="loadFinance()" [disabled]="loading() || budgetSaving()">
+          Actualizar lista
+        </button>
+      </div>
+    </form>
+
+    <table *ngIf="!loading() && budgets().length > 0">
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th>Categoria</th>
+          <th>Limite</th>
+          <th>Activo</th>
+          <th>Notas</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let budget of budgets(); trackBy: trackBudget">
+          <td>{{ budget.month }}</td>
+          <td>
+            <span class="category-pill" [ngClass]="categoryClass(budget.category)">
+              <span class="category-mark">{{ categoryShortCode(budget.category) }}</span>
+              {{ categoryLabel(budget.category) }}
+            </span>
+          </td>
+          <td>{{ budget.limitAmount | currency:'EUR':'symbol':'1.2-2' }}</td>
+          <td>
+            <span class="status-pill" [class.inactive]="!budget.active">
+              {{ budget.active ? 'Activo' : 'Inactivo' }}
+            </span>
+          </td>
+          <td>{{ budget.notes || '-' }}</td>
+          <td class="row-actions">
+            <button type="button" class="secondary-button" (click)="editBudget(budget)" [disabled]="budgetSaving()">
+              Editar
+            </button>
+            <button type="button" class="danger-button" (click)="deleteBudget(budget)" [disabled]="budgetSaving()">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!loading() && budgets().length === 0" class="empty-state">
+      No hay presupuestos registrados para {{ selectedMonth() }}.
+    </p>
+  </section>
+
   <section class="section savings-goals-section">
     <div class="section-header">
       <h2>Objetivos de ahorro</h2>

@@ -5,6 +5,12 @@ import { FormsModule } from '@angular/forms';
 import { finalize, forkJoin } from 'rxjs';
 
 import {
+  Budget,
+  BudgetAlert,
+  BudgetCategoryStatus,
+  BudgetRequest,
+  BudgetStatus,
+  BudgetSummary,
   Expense,
   ExpenseCategory,
   ExpenseCategoryBreakdown,
@@ -57,6 +63,13 @@ interface SavingsGoalForm {
   notes: string;
 }
 
+interface BudgetForm {
+  category: ExpenseCategory;
+  limitAmount: number | null;
+  active: boolean;
+  notes: string;
+}
+
 @Component({
   selector: 'app-finance-page',
   imports: [CommonModule, FormsModule],
@@ -72,6 +85,8 @@ export class FinancePage implements OnInit {
   protected readonly dashboard = signal<FinanceDashboard | null>(null);
   protected readonly categoryStatistics = signal<FinanceCategoryStatistics | null>(null);
   protected readonly obligationsSummary = signal<MonthlyObligationsSummary | null>(null);
+  protected readonly budgetSummary = signal<BudgetSummary | null>(null);
+  protected readonly budgets = signal<Budget[]>([]);
   protected readonly recurringExpenses = signal<RecurringExpense[]>([]);
   protected readonly savingsGoals = signal<SavingsGoal[]>([]);
   protected readonly financeCategories = signal<FinanceCategoryOption[]>(this.getDefaultFinanceCategories());
@@ -82,15 +97,19 @@ export class FinancePage implements OnInit {
   protected readonly recurringSaving = signal(false);
   protected readonly savingsGoalsLoading = signal(false);
   protected readonly savingsGoalSaving = signal(false);
+  protected readonly budgetSaving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly expenseError = signal<string | null>(null);
   protected readonly recurringError = signal<string | null>(null);
   protected readonly savingsGoalError = signal<string | null>(null);
+  protected readonly budgetError = signal<string | null>(null);
   protected readonly editingRecurringExpenseId = signal<number | null>(null);
   protected readonly editingSavingsGoalId = signal<number | null>(null);
+  protected readonly editingBudgetId = signal<number | null>(null);
   protected readonly expenseForm = signal<ExpenseForm>(this.getEmptyExpenseForm());
   protected readonly recurringForm = signal<RecurringExpenseForm>(this.getEmptyRecurringExpenseForm());
   protected readonly savingsGoalForm = signal<SavingsGoalForm>(this.getEmptySavingsGoalForm());
+  protected readonly budgetForm = signal<BudgetForm>(this.getEmptyBudgetForm());
   protected readonly recurringRecurrences: RecurringExpenseRecurrence[] = ['MONTHLY', 'YEARLY'];
   protected readonly savingsGoalCategories: SavingsGoalCategory[] = [
     'EMERGENCY_FUND',
@@ -118,15 +137,19 @@ export class FinancePage implements OnInit {
       dashboard: this.financeService.getDashboard(this.selectedMonth()),
       categoryStatistics: this.financeService.getCategoryStatistics(this.selectedMonth()),
       obligationsSummary: this.financeService.getMonthlyObligationsSummary(this.selectedMonth()),
+      budgetSummary: this.financeService.getBudgetSummary(this.selectedMonth()),
+      budgets: this.financeService.getBudgets(this.selectedMonth()),
       expenses: this.financeService.getExpenses(),
       incomes: this.financeService.getIncomes(),
     })
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe({
-        next: ({ dashboard, categoryStatistics, obligationsSummary, expenses, incomes }) => {
+        next: ({ dashboard, categoryStatistics, obligationsSummary, budgetSummary, budgets, expenses, incomes }) => {
           this.dashboard.set(dashboard);
           this.categoryStatistics.set(categoryStatistics);
           this.obligationsSummary.set(obligationsSummary);
+          this.budgetSummary.set(budgetSummary);
+          this.budgets.set(budgets);
           this.expenses.set(expenses);
           this.incomes.set(incomes);
         },
@@ -185,6 +208,18 @@ export class FinancePage implements OnInit {
     return savingsGoal.id;
   }
 
+  protected trackBudget(_index: number, budget: Budget): number {
+    return budget.id;
+  }
+
+  protected trackBudgetCategoryStatus(_index: number, categoryStatus: BudgetCategoryStatus): string {
+    return `${categoryStatus.budgetId ?? 'category'}-${categoryStatus.category}`;
+  }
+
+  protected trackBudgetAlert(index: number, alert: BudgetAlert): string {
+    return `${alert.type}-${alert.category}-${index}`;
+  }
+
   protected trackCategoryBreakdown(_index: number, breakdown: ExpenseCategoryBreakdown): string {
     return breakdown.category;
   }
@@ -209,6 +244,8 @@ export class FinancePage implements OnInit {
     }
 
     this.selectedMonth.set(input.value);
+    this.resetBudgetForm();
+    this.budgetError.set(null);
     this.loadFinance();
   }
 
@@ -282,6 +319,41 @@ export class FinancePage implements OnInit {
     return `status-${status.toLowerCase()}`;
   }
 
+  protected budgetStatusLabel(status: BudgetStatus): string {
+    const labels: Record<BudgetStatus, string> = {
+      OK: 'OK',
+      WARNING: 'Atencion',
+      EXCEEDED: 'Excedido',
+    };
+
+    return labels[status];
+  }
+
+  protected budgetStatusClass(status: BudgetStatus): string {
+    return `status-budget-${status.toLowerCase()}`;
+  }
+
+  protected budgetAlertLabel(alert: BudgetAlert): string {
+    const labels: Record<BudgetAlert['type'], string> = {
+      APPROACHING_LIMIT: 'Cerca del limite',
+      BUDGET_EXCEEDED: 'Presupuesto excedido',
+    };
+
+    return labels[alert.type];
+  }
+
+  protected budgetAlertClass(alert: BudgetAlert): string {
+    return `budget-alert-${alert.type.toLowerCase().replace(/_/g, '-')}`;
+  }
+
+  protected budgetProgressWidth(percentage: number): number {
+    if (!Number.isFinite(percentage) || percentage <= 0) {
+      return 0;
+    }
+
+    return Math.min(percentage, 100);
+  }
+
   protected savingsGoalCategoryLabel(category: SavingsGoalCategory): string {
     const labels: Record<SavingsGoalCategory, string> = {
       EMERGENCY_FUND: 'Emergencia',
@@ -345,6 +417,13 @@ export class FinancePage implements OnInit {
     value: SavingsGoalForm[K],
   ): void {
     this.savingsGoalForm.update(form => ({ ...form, [field]: value }));
+  }
+
+  protected updateBudgetForm<K extends keyof BudgetForm>(
+    field: K,
+    value: BudgetForm[K],
+  ): void {
+    this.budgetForm.update(form => ({ ...form, [field]: value }));
   }
 
   protected submitExpense(): void {
@@ -431,6 +510,38 @@ export class FinancePage implements OnInit {
       });
   }
 
+  protected submitBudget(): void {
+    const request = this.toBudgetRequest();
+    if (!request) {
+      return;
+    }
+
+    this.budgetSaving.set(true);
+    this.budgetError.set(null);
+
+    const editingId = this.editingBudgetId();
+    const operation = editingId === null
+      ? this.financeService.createBudget(request)
+      : this.financeService.updateBudget(editingId, request);
+
+    operation
+      .pipe(finalize(() => this.budgetSaving.set(false)))
+      .subscribe({
+        next: budget => {
+          if (editingId === null) {
+            this.budgets.update(budgets => [...budgets, budget]);
+          } else {
+            this.budgets.update(budgets => budgets.map(item =>
+              item.id === budget.id ? budget : item,
+            ));
+          }
+          this.resetBudgetForm();
+          this.loadFinance();
+        },
+        error: error => this.budgetError.set(this.resolveError(error, 'No se pudo guardar el presupuesto.')),
+      });
+  }
+
   protected editRecurringExpense(recurringExpense: RecurringExpense): void {
     this.editingRecurringExpenseId.set(recurringExpense.id);
     this.recurringError.set(null);
@@ -468,6 +579,21 @@ export class FinancePage implements OnInit {
 
   protected cancelSavingsGoalEdit(): void {
     this.resetSavingsGoalForm();
+  }
+
+  protected editBudget(budget: Budget): void {
+    this.editingBudgetId.set(budget.id);
+    this.budgetError.set(null);
+    this.budgetForm.set({
+      category: budget.category,
+      limitAmount: budget.limitAmount,
+      active: budget.active,
+      notes: budget.notes ?? '',
+    });
+  }
+
+  protected cancelBudgetEdit(): void {
+    this.resetBudgetForm();
   }
 
   protected deleteRecurringExpense(recurringExpense: RecurringExpense): void {
@@ -509,12 +635,45 @@ export class FinancePage implements OnInit {
       });
   }
 
+  protected deleteBudget(budget: Budget): void {
+    this.budgetSaving.set(true);
+    this.budgetError.set(null);
+
+    this.financeService.deleteBudget(budget.id)
+      .pipe(finalize(() => this.budgetSaving.set(false)))
+      .subscribe({
+        next: () => {
+          this.budgets.update(budgets =>
+            budgets.filter(item => item.id !== budget.id),
+          );
+          if (this.editingBudgetId() === budget.id) {
+            this.resetBudgetForm();
+          }
+          this.loadFinance();
+        },
+        error: error => this.budgetError.set(this.resolveError(error, 'No se pudo eliminar el presupuesto.')),
+      });
+  }
+
   protected isEditingRecurringExpense(): boolean {
     return this.editingRecurringExpenseId() !== null;
   }
 
   protected isEditingSavingsGoal(): boolean {
     return this.editingSavingsGoalId() !== null;
+  }
+
+  protected isEditingBudget(): boolean {
+    return this.editingBudgetId() !== null;
+  }
+
+  protected isBudgetCategoryUnavailable(category: ExpenseCategory): boolean {
+    const form = this.budgetForm();
+    if (!form.active) {
+      return false;
+    }
+
+    return this.hasActiveBudgetForCategory(category, this.editingBudgetId());
   }
 
   private resolveError(error: unknown, fallback = 'No se pudo cargar la informacion financiera.'): string {
@@ -611,6 +770,36 @@ export class FinancePage implements OnInit {
     };
   }
 
+  private toBudgetRequest(): BudgetRequest | null {
+    const form = this.budgetForm();
+    const limitAmount = Number(form.limitAmount);
+
+    if (!this.isValidMonth(this.selectedMonth())) {
+      this.budgetError.set('El mes seleccionado no es valido.');
+      return null;
+    }
+    if (!this.financeCategories().some(option => option.code === form.category)) {
+      this.budgetError.set('La categoria seleccionada no es valida.');
+      return null;
+    }
+    if (!Number.isFinite(limitAmount) || limitAmount <= 0) {
+      this.budgetError.set('El limite del presupuesto debe ser mayor que cero.');
+      return null;
+    }
+    if (form.active && this.hasActiveBudgetForCategory(form.category, this.editingBudgetId())) {
+      this.budgetError.set('Ya existe un presupuesto activo para esa categoria en el mes seleccionado.');
+      return null;
+    }
+
+    return {
+      month: this.selectedMonth(),
+      category: form.category,
+      limitAmount,
+      active: form.active,
+      notes: form.notes.trim() || null,
+    };
+  }
+
   private toExpenseRequest(): ExpenseRequest | null {
     const form = this.expenseForm();
     const amount = Number(form.amount);
@@ -656,6 +845,11 @@ export class FinancePage implements OnInit {
     this.savingsGoalForm.set(this.getEmptySavingsGoalForm());
   }
 
+  private resetBudgetForm(): void {
+    this.editingBudgetId.set(null);
+    this.budgetForm.set(this.getEmptyBudgetForm());
+  }
+
   private getEmptyRecurringExpenseForm(): RecurringExpenseForm {
     return {
       name: '',
@@ -689,6 +883,15 @@ export class FinancePage implements OnInit {
       category: 'OTHER',
       status: 'ACTIVE',
       monthlySavingRate: null,
+      notes: '',
+    };
+  }
+
+  private getEmptyBudgetForm(): BudgetForm {
+    return {
+      category: 'OTHER',
+      limitAmount: null,
+      active: true,
       notes: '',
     };
   }
@@ -761,10 +964,21 @@ export class FinancePage implements OnInit {
     const nextDate = new Date(year, month - 1 + offset, 1);
     const nextMonth = String(nextDate.getMonth() + 1).padStart(2, '0');
     this.selectedMonth.set(`${nextDate.getFullYear()}-${nextMonth}`);
+    this.resetBudgetForm();
+    this.budgetError.set(null);
     this.loadFinance();
   }
 
   private isValidMonth(value: string): boolean {
     return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+  }
+
+  private hasActiveBudgetForCategory(category: ExpenseCategory, excludedId: number | null): boolean {
+    return this.budgets().some(budget =>
+      budget.month === this.selectedMonth()
+      && budget.category === category
+      && budget.active
+      && budget.id !== excludedId,
+    );
   }
 }
