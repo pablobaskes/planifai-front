@@ -99,7 +99,12 @@
         <tr *ngFor="let payment of summary.upcomingPayments; trackBy: trackUpcomingPayment">
           <td>{{ payment.name }}</td>
           <td>{{ payment.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
-          <td><span class="category-pill">{{ categoryLabel(payment.category) }}</span></td>
+          <td>
+            <span class="category-pill" [ngClass]="categoryClass(payment.category)">
+              <span class="category-mark">{{ categoryShortCode(payment.category) }}</span>
+              {{ categoryLabel(payment.category) }}
+            </span>
+          </td>
           <td>{{ payment.dueDate }}</td>
           <td>{{ payment.paymentDay }}</td>
           <td>
@@ -127,7 +132,10 @@
     <div *ngIf="statistics.categories.length > 0; else noCategoryExpenses" class="breakdown-list">
       <article class="breakdown-row" *ngFor="let item of statistics.categories; trackBy: trackCategoryStatistic">
         <div class="breakdown-main">
-          <strong>{{ categoryLabel(item.category) }}</strong>
+          <strong class="category-heading">
+            <span class="category-mark" [ngClass]="categoryClass(item.category)">{{ categoryShortCode(item.category) }}</span>
+            {{ categoryLabel(item.category) }}
+          </strong>
           <span>{{ item.amount | currency:'EUR':'symbol':'1.2-2' }}</span>
         </div>
         <div class="bar-track" aria-hidden="true">
@@ -175,18 +183,27 @@
             required
           >
         </label>
-        <label>
-          Categoria
-          <select
-            name="expense-category"
-            [ngModel]="expenseForm().category"
-            (ngModelChange)="updateExpenseForm('category', $event)"
-            [disabled]="expenseSaving()"
-            required
+        <fieldset class="category-picker">
+          <legend>Categoria</legend>
+          <label
+            class="category-choice"
+            *ngFor="let category of financeCategories()"
+            [class.selected]="expenseForm().category === category.code"
+            [ngClass]="categoryClass(category.code)"
           >
-            <option *ngFor="let category of financeCategories()" [value]="category.code">{{ category.label }}</option>
-          </select>
-        </label>
+            <input
+              type="radio"
+              name="expense-category"
+              [ngModel]="expenseForm().category"
+              (ngModelChange)="updateExpenseForm('category', $event)"
+              [value]="category.code"
+              [disabled]="expenseSaving()"
+              required
+            >
+            <span class="category-mark">{{ categoryShortCode(category.code) }}</span>
+            <span>{{ categoryLabel(category.code) }}</span>
+          </label>
+        </fieldset>
         <label>
           Fecha
           <input
@@ -251,17 +268,27 @@
             required
           >
         </label>
-        <label>
-          Categoria
-          <select
-            name="recurring-category"
-            [ngModel]="recurringForm().category"
-            (ngModelChange)="updateRecurringForm('category', $event)"
-            [disabled]="recurringSaving()"
+        <fieldset class="category-picker">
+          <legend>Categoria</legend>
+          <label
+            class="category-choice"
+            *ngFor="let category of financeCategories()"
+            [class.selected]="recurringForm().category === category.code"
+            [ngClass]="categoryClass(category.code)"
           >
-            <option *ngFor="let category of financeCategories()" [value]="category.code">{{ category.label }}</option>
-          </select>
-        </label>
+            <input
+              type="radio"
+              name="recurring-category"
+              [ngModel]="recurringForm().category"
+              (ngModelChange)="updateRecurringForm('category', $event)"
+              [value]="category.code"
+              [disabled]="recurringSaving()"
+              required
+            >
+            <span class="category-mark">{{ categoryShortCode(category.code) }}</span>
+            <span>{{ categoryLabel(category.code) }}</span>
+          </label>
+        </fieldset>
         <label>
           Recurrencia
           <select
@@ -366,7 +393,12 @@
         <tr *ngFor="let recurringExpense of recurringExpenses(); trackBy: trackRecurringExpense">
           <td>{{ recurringExpense.name }}</td>
           <td>{{ recurringExpense.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
-          <td><span class="category-pill">{{ categoryLabel(recurringExpense.category) }}</span></td>
+          <td>
+            <span class="category-pill" [ngClass]="categoryClass(recurringExpense.category)">
+              <span class="category-mark">{{ categoryShortCode(recurringExpense.category) }}</span>
+              {{ categoryLabel(recurringExpense.category) }}
+            </span>
+          </td>
           <td>{{ recurringExpense.recurrence }}</td>
           <td>{{ recurringExpense.paymentDay }}</td>
           <td>
@@ -409,7 +441,12 @@
           <td>{{ expense.concept }}</td>
           <td>{{ expense.amount | currency:'EUR':'symbol':'1.2-2' }}</td>
           <td>{{ expense.expenseDate }}</td>
-          <td><span class="category-pill">{{ categoryLabel(expense.category) }}</span></td>
+          <td>
+            <span class="category-pill" [ngClass]="categoryClass(expense.category)">
+              <span class="category-mark">{{ categoryShortCode(expense.category) }}</span>
+              {{ categoryLabel(expense.category) }}
+            </span>
+          </td>
           <td>{{ expense.recurrence }}</td>
           <td>{{ expense.notes || '-' }}</td>
         </tr>

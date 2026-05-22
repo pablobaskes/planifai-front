@@ -220,7 +220,15 @@ export class FinancePage implements OnInit {
   }
 
   protected categoryLabel(category: ExpenseCategory): string {
-    return this.financeCategories().find(option => option.code === category)?.label ?? category;
+    return this.categoryFriendlyLabels[category] ?? this.financeCategories().find(option => option.code === category)?.label ?? category;
+  }
+
+  protected categoryShortCode(category: ExpenseCategory): string {
+    return this.categoryShortCodes[category] ?? category.slice(0, 2);
+  }
+
+  protected categoryClass(category: ExpenseCategory): string {
+    return `category-${category.toLowerCase().replace('_', '-')}`;
   }
 
   protected updateExpenseForm<K extends keyof ExpenseForm>(
@@ -453,21 +461,53 @@ export class FinancePage implements OnInit {
 
   private getDefaultFinanceCategories(): FinanceCategoryOption[] {
     return [
-      { code: 'FOOD', label: 'Food' },
-      { code: 'RESTAURANTS', label: 'Restaurants' },
-      { code: 'TRANSPORT', label: 'Transport' },
-      { code: 'HEALTH', label: 'Health' },
-      { code: 'EDUCATION', label: 'Education' },
-      { code: 'SUBSCRIPTIONS', label: 'Subscriptions' },
-      { code: 'SAVINGS', label: 'Savings' },
-      { code: 'ENTERTAINMENT', label: 'Entertainment' },
-      { code: 'TRAVEL', label: 'Travel' },
-      { code: 'PETS', label: 'Pets' },
-      { code: 'OTHER', label: 'Other' },
-      { code: 'HOUSING', label: 'Housing' },
-      { code: 'UTILITIES', label: 'Utilities' },
+      { code: 'FOOD', label: 'Alimentacion' },
+      { code: 'RESTAURANTS', label: 'Restaurantes' },
+      { code: 'TRANSPORT', label: 'Transporte' },
+      { code: 'HEALTH', label: 'Salud' },
+      { code: 'EDUCATION', label: 'Educacion' },
+      { code: 'SUBSCRIPTIONS', label: 'Suscripciones' },
+      { code: 'SAVINGS', label: 'Ahorro' },
+      { code: 'ENTERTAINMENT', label: 'Ocio' },
+      { code: 'TRAVEL', label: 'Viajes' },
+      { code: 'PETS', label: 'Mascotas' },
+      { code: 'OTHER', label: 'Otros' },
+      { code: 'HOUSING', label: 'Vivienda' },
+      { code: 'UTILITIES', label: 'Suministros' },
     ];
   }
+
+  private readonly categoryFriendlyLabels: Record<ExpenseCategory, string> = {
+    FOOD: 'Alimentacion',
+    RESTAURANTS: 'Restaurantes',
+    TRANSPORT: 'Transporte',
+    HEALTH: 'Salud',
+    EDUCATION: 'Educacion',
+    SUBSCRIPTIONS: 'Suscripciones',
+    SAVINGS: 'Ahorro',
+    ENTERTAINMENT: 'Ocio',
+    TRAVEL: 'Viajes',
+    PETS: 'Mascotas',
+    OTHER: 'Otros',
+    HOUSING: 'Vivienda',
+    UTILITIES: 'Suministros',
+  };
+
+  private readonly categoryShortCodes: Record<ExpenseCategory, string> = {
+    FOOD: 'AL',
+    RESTAURANTS: 'RS',
+    TRANSPORT: 'TR',
+    HEALTH: 'SA',
+    EDUCATION: 'ED',
+    SUBSCRIPTIONS: 'SU',
+    SAVINGS: 'AH',
+    ENTERTAINMENT: 'OC',
+    TRAVEL: 'VI',
+    PETS: 'MA',
+    OTHER: 'OT',
+    HOUSING: 'CA',
+    UTILITIES: 'LU',
+  };
 
   private getCurrentMonth(): string {
     const today = new Date();
