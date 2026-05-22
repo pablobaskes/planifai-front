@@ -18,6 +18,10 @@ import {
   RecurringExpense,
   RecurringExpenseRecurrence,
   RecurringExpenseRequest,
+  SavingsGoal,
+  SavingsGoalCategory,
+  SavingsGoalRequest,
+  SavingsGoalStatus,
   UpcomingPayment,
 } from '../../models/finance.model';
 import { FinanceService } from '../../services/finance.service';
@@ -42,6 +46,17 @@ interface ExpenseForm {
   notes: string;
 }
 
+interface SavingsGoalForm {
+  name: string;
+  targetAmount: number | null;
+  currentAmount: number | null;
+  targetDate: string;
+  category: SavingsGoalCategory;
+  status: SavingsGoalStatus;
+  monthlySavingRate: number | null;
+  notes: string;
+}
+
 @Component({
   selector: 'app-finance-page',
   imports: [CommonModule, FormsModule],
@@ -58,24 +73,41 @@ export class FinancePage implements OnInit {
   protected readonly categoryStatistics = signal<FinanceCategoryStatistics | null>(null);
   protected readonly obligationsSummary = signal<MonthlyObligationsSummary | null>(null);
   protected readonly recurringExpenses = signal<RecurringExpense[]>([]);
+  protected readonly savingsGoals = signal<SavingsGoal[]>([]);
   protected readonly financeCategories = signal<FinanceCategoryOption[]>(this.getDefaultFinanceCategories());
   protected readonly selectedMonth = signal(this.getCurrentMonth());
   protected readonly loading = signal(false);
   protected readonly expenseSaving = signal(false);
   protected readonly recurringLoading = signal(false);
   protected readonly recurringSaving = signal(false);
+  protected readonly savingsGoalsLoading = signal(false);
+  protected readonly savingsGoalSaving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly expenseError = signal<string | null>(null);
   protected readonly recurringError = signal<string | null>(null);
+  protected readonly savingsGoalError = signal<string | null>(null);
   protected readonly editingRecurringExpenseId = signal<number | null>(null);
+  protected readonly editingSavingsGoalId = signal<number | null>(null);
   protected readonly expenseForm = signal<ExpenseForm>(this.getEmptyExpenseForm());
   protected readonly recurringForm = signal<RecurringExpenseForm>(this.getEmptyRecurringExpenseForm());
+  protected readonly savingsGoalForm = signal<SavingsGoalForm>(this.getEmptySavingsGoalForm());
   protected readonly recurringRecurrences: RecurringExpenseRecurrence[] = ['MONTHLY', 'YEARLY'];
+  protected readonly savingsGoalCategories: SavingsGoalCategory[] = [
+    'EMERGENCY_FUND',
+    'TRAVEL',
+    'ELECTRONICS',
+    'CAR',
+    'HOME',
+    'EDUCATION',
+    'OTHER',
+  ];
+  protected readonly savingsGoalStatuses: SavingsGoalStatus[] = ['ACTIVE', 'COMPLETED', 'PAUSED', 'CANCELLED'];
 
   ngOnInit(): void {
     this.loadFinanceCategories();
     this.loadFinance();
     this.loadRecurringExpenses();
+    this.loadSavingsGoals();
   }
 
   protected loadFinance(): void {
@@ -125,6 +157,18 @@ export class FinancePage implements OnInit {
       });
   }
 
+  protected loadSavingsGoals(): void {
+    this.savingsGoalsLoading.set(true);
+    this.savingsGoalError.set(null);
+
+    this.financeService.getSavingsGoals()
+      .pipe(finalize(() => this.savingsGoalsLoading.set(false)))
+      .subscribe({
+        next: savingsGoals => this.savingsGoals.set(savingsGoals),
+        error: error => this.savingsGoalError.set(this.resolveError(error, 'No se pudieron cargar los objetivos de ahorro.')),
+      });
+  }
+
   protected trackExpense(_index: number, expense: Expense): number {
     return expense.id;
   }
@@ -135,6 +179,10 @@ export class FinancePage implements OnInit {
 
   protected trackRecurringExpense(_index: number, recurringExpense: RecurringExpense): number {
     return recurringExpense.id;
+  }
+
+  protected trackSavingsGoal(_index: number, savingsGoal: SavingsGoal): number {
+    return savingsGoal.id;
   }
 
   protected trackCategoryBreakdown(_index: number, breakdown: ExpenseCategoryBreakdown): string {
@@ -219,6 +267,53 @@ export class FinancePage implements OnInit {
     return `status-${status.toLowerCase().replace(/_/g, '-')}`;
   }
 
+  protected savingsGoalStatusLabel(status: SavingsGoalStatus): string {
+    const labels: Record<SavingsGoalStatus, string> = {
+      ACTIVE: 'Activo',
+      COMPLETED: 'Completado',
+      PAUSED: 'Pausado',
+      CANCELLED: 'Cancelado',
+    };
+
+    return labels[status];
+  }
+
+  protected savingsGoalStatusClass(status: SavingsGoalStatus): string {
+    return `status-${status.toLowerCase()}`;
+  }
+
+  protected savingsGoalCategoryLabel(category: SavingsGoalCategory): string {
+    const labels: Record<SavingsGoalCategory, string> = {
+      EMERGENCY_FUND: 'Emergencia',
+      TRAVEL: 'Viajes',
+      ELECTRONICS: 'Electronica',
+      CAR: 'Coche',
+      HOME: 'Hogar',
+      EDUCATION: 'Educacion',
+      OTHER: 'Otros',
+    };
+
+    return labels[category];
+  }
+
+  protected savingsGoalCategoryShortCode(category: SavingsGoalCategory): string {
+    const shortCodes: Record<SavingsGoalCategory, string> = {
+      EMERGENCY_FUND: 'EM',
+      TRAVEL: 'VI',
+      ELECTRONICS: 'EL',
+      CAR: 'CO',
+      HOME: 'HO',
+      EDUCATION: 'ED',
+      OTHER: 'OT',
+    };
+
+    return shortCodes[category];
+  }
+
+  protected savingsGoalCategoryClass(category: SavingsGoalCategory): string {
+    return `goal-category-${category.toLowerCase().replace(/_/g, '-')}`;
+  }
+
   protected categoryLabel(category: ExpenseCategory): string {
     return this.categoryFriendlyLabels[category] ?? this.financeCategories().find(option => option.code === category)?.label ?? category;
   }
@@ -243,6 +338,13 @@ export class FinancePage implements OnInit {
     value: RecurringExpenseForm[K],
   ): void {
     this.recurringForm.update(form => ({ ...form, [field]: value }));
+  }
+
+  protected updateSavingsGoalForm<K extends keyof SavingsGoalForm>(
+    field: K,
+    value: SavingsGoalForm[K],
+  ): void {
+    this.savingsGoalForm.update(form => ({ ...form, [field]: value }));
   }
 
   protected submitExpense(): void {
@@ -298,6 +400,37 @@ export class FinancePage implements OnInit {
       });
   }
 
+  protected submitSavingsGoal(): void {
+    const request = this.toSavingsGoalRequest();
+    if (!request) {
+      return;
+    }
+
+    this.savingsGoalSaving.set(true);
+    this.savingsGoalError.set(null);
+
+    const editingId = this.editingSavingsGoalId();
+    const operation = editingId === null
+      ? this.financeService.createSavingsGoal(request)
+      : this.financeService.updateSavingsGoal(editingId, request);
+
+    operation
+      .pipe(finalize(() => this.savingsGoalSaving.set(false)))
+      .subscribe({
+        next: savingsGoal => {
+          if (editingId === null) {
+            this.savingsGoals.update(savingsGoals => [...savingsGoals, savingsGoal]);
+          } else {
+            this.savingsGoals.update(savingsGoals => savingsGoals.map(item =>
+              item.id === savingsGoal.id ? savingsGoal : item,
+            ));
+          }
+          this.resetSavingsGoalForm();
+        },
+        error: error => this.savingsGoalError.set(this.resolveError(error, 'No se pudo guardar el objetivo de ahorro.')),
+      });
+  }
+
   protected editRecurringExpense(recurringExpense: RecurringExpense): void {
     this.editingRecurringExpenseId.set(recurringExpense.id);
     this.recurringError.set(null);
@@ -316,6 +449,25 @@ export class FinancePage implements OnInit {
 
   protected cancelRecurringExpenseEdit(): void {
     this.resetRecurringForm();
+  }
+
+  protected editSavingsGoal(savingsGoal: SavingsGoal): void {
+    this.editingSavingsGoalId.set(savingsGoal.id);
+    this.savingsGoalError.set(null);
+    this.savingsGoalForm.set({
+      name: savingsGoal.name,
+      targetAmount: savingsGoal.targetAmount,
+      currentAmount: savingsGoal.currentAmount,
+      targetDate: savingsGoal.targetDate ?? '',
+      category: savingsGoal.category,
+      status: savingsGoal.status,
+      monthlySavingRate: savingsGoal.monthlySavingRate ?? null,
+      notes: savingsGoal.notes ?? '',
+    });
+  }
+
+  protected cancelSavingsGoalEdit(): void {
+    this.resetSavingsGoalForm();
   }
 
   protected deleteRecurringExpense(recurringExpense: RecurringExpense): void {
@@ -338,8 +490,31 @@ export class FinancePage implements OnInit {
       });
   }
 
+  protected deleteSavingsGoal(savingsGoal: SavingsGoal): void {
+    this.savingsGoalSaving.set(true);
+    this.savingsGoalError.set(null);
+
+    this.financeService.deleteSavingsGoal(savingsGoal.id)
+      .pipe(finalize(() => this.savingsGoalSaving.set(false)))
+      .subscribe({
+        next: () => {
+          this.savingsGoals.update(savingsGoals =>
+            savingsGoals.filter(item => item.id !== savingsGoal.id),
+          );
+          if (this.editingSavingsGoalId() === savingsGoal.id) {
+            this.resetSavingsGoalForm();
+          }
+        },
+        error: error => this.savingsGoalError.set(this.resolveError(error, 'No se pudo eliminar el objetivo de ahorro.')),
+      });
+  }
+
   protected isEditingRecurringExpense(): boolean {
     return this.editingRecurringExpenseId() !== null;
+  }
+
+  protected isEditingSavingsGoal(): boolean {
+    return this.editingSavingsGoalId() !== null;
   }
 
   private resolveError(error: unknown, fallback = 'No se pudo cargar la informacion financiera.'): string {
@@ -395,6 +570,47 @@ export class FinancePage implements OnInit {
     };
   }
 
+  private toSavingsGoalRequest(): SavingsGoalRequest | null {
+    const form = this.savingsGoalForm();
+    const targetAmount = Number(form.targetAmount);
+    const currentAmount = Number(form.currentAmount);
+    const monthlySavingRate = form.monthlySavingRate === null || form.monthlySavingRate === undefined
+      ? null
+      : Number(form.monthlySavingRate);
+
+    if (!form.name.trim()) {
+      this.savingsGoalError.set('El nombre del objetivo es obligatorio.');
+      return null;
+    }
+    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+      this.savingsGoalError.set('El importe objetivo debe ser mayor que cero.');
+      return null;
+    }
+    if (!Number.isFinite(currentAmount) || currentAmount < 0) {
+      this.savingsGoalError.set('El importe actual no puede ser negativo.');
+      return null;
+    }
+    if (currentAmount > targetAmount) {
+      this.savingsGoalError.set('El importe actual no puede superar el objetivo.');
+      return null;
+    }
+    if (monthlySavingRate !== null && (!Number.isFinite(monthlySavingRate) || monthlySavingRate < 0)) {
+      this.savingsGoalError.set('El ahorro mensual no puede ser negativo.');
+      return null;
+    }
+
+    return {
+      name: form.name.trim(),
+      targetAmount,
+      currentAmount,
+      targetDate: form.targetDate || null,
+      category: form.category,
+      status: form.status,
+      monthlySavingRate,
+      notes: form.notes.trim() || null,
+    };
+  }
+
   private toExpenseRequest(): ExpenseRequest | null {
     const form = this.expenseForm();
     const amount = Number(form.amount);
@@ -435,6 +651,11 @@ export class FinancePage implements OnInit {
     this.recurringForm.set(this.getEmptyRecurringExpenseForm());
   }
 
+  private resetSavingsGoalForm(): void {
+    this.editingSavingsGoalId.set(null);
+    this.savingsGoalForm.set(this.getEmptySavingsGoalForm());
+  }
+
   private getEmptyRecurringExpenseForm(): RecurringExpenseForm {
     return {
       name: '',
@@ -455,6 +676,19 @@ export class FinancePage implements OnInit {
       amount: null,
       category: 'OTHER',
       expenseDate: this.todayAsDateInputValue(),
+      notes: '',
+    };
+  }
+
+  private getEmptySavingsGoalForm(): SavingsGoalForm {
+    return {
+      name: '',
+      targetAmount: null,
+      currentAmount: 0,
+      targetDate: '',
+      category: 'OTHER',
+      status: 'ACTIVE',
+      monthlySavingRate: null,
       notes: '',
     };
   }

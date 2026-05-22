@@ -14,6 +14,9 @@ import {
   MonthlyObligationsSummary,
   RecurringExpense,
   RecurringExpenseRequest,
+  SavingsGoal,
+  SavingsGoalRequest,
+  SavingsGoalSummary,
 } from '../models/finance.model';
 
 @Injectable({ providedIn: 'root' })
@@ -70,5 +73,29 @@ export class FinanceService {
   getMonthlyObligationsSummary(month: string): Observable<MonthlyObligationsSummary> {
     const params = new HttpParams().set('month', month);
     return this.http.get<MonthlyObligationsSummary>(`${this.baseUrl}/obligations/monthly-summary`, { params });
+  }
+
+  getSavingsGoals(): Observable<SavingsGoal[]> {
+    return this.http.get<SavingsGoal[]>(`${this.baseUrl}/savings-goals`);
+  }
+
+  getSavingsGoal(id: number): Observable<SavingsGoal> {
+    return this.http.get<SavingsGoal>(`${this.baseUrl}/savings-goals/${id}`);
+  }
+
+  createSavingsGoal(request: SavingsGoalRequest): Observable<SavingsGoal> {
+    return this.http.post<SavingsGoal>(`${this.baseUrl}/savings-goals`, request);
+  }
+
+  updateSavingsGoal(id: number, request: SavingsGoalRequest): Observable<SavingsGoal> {
+    return this.http.put<SavingsGoal>(`${this.baseUrl}/savings-goals/${id}`, request);
+  }
+
+  deleteSavingsGoal(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/savings-goals/${id}`);
+  }
+
+  getSavingsGoalsSummary(): Observable<SavingsGoalSummary> {
+    return this.http.get<SavingsGoalSummary>(`${this.baseUrl}/savings-goals/summary`);
   }
 }

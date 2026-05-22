@@ -150,6 +150,196 @@
     </ng-template>
   </section>
 
+  <section class="section savings-goals-section">
+    <div class="section-header">
+      <h2>Objetivos de ahorro</h2>
+      <span *ngIf="savingsGoals().length > 0">{{ savingsGoals().length }} objetivos</span>
+    </div>
+
+    <p *ngIf="savingsGoalError()" class="error">{{ savingsGoalError() }}</p>
+    <p *ngIf="savingsGoalsLoading()" class="loading">Cargando objetivos de ahorro...</p>
+
+    <form class="savings-goal-form" (ngSubmit)="submitSavingsGoal()">
+      <div class="form-grid">
+        <label>
+          Nombre
+          <input
+            type="text"
+            name="savings-goal-name"
+            [ngModel]="savingsGoalForm().name"
+            (ngModelChange)="updateSavingsGoalForm('name', $event)"
+            [disabled]="savingsGoalSaving()"
+            required
+          >
+        </label>
+        <label>
+          Objetivo
+          <input
+            type="number"
+            name="savings-goal-target"
+            min="0.01"
+            step="0.01"
+            [ngModel]="savingsGoalForm().targetAmount"
+            (ngModelChange)="updateSavingsGoalForm('targetAmount', $event)"
+            [disabled]="savingsGoalSaving()"
+            required
+          >
+        </label>
+        <label>
+          Ahorrado
+          <input
+            type="number"
+            name="savings-goal-current"
+            min="0"
+            step="0.01"
+            [ngModel]="savingsGoalForm().currentAmount"
+            (ngModelChange)="updateSavingsGoalForm('currentAmount', $event)"
+            [disabled]="savingsGoalSaving()"
+            required
+          >
+        </label>
+        <label>
+          Fecha objetivo
+          <input
+            type="date"
+            name="savings-goal-target-date"
+            [ngModel]="savingsGoalForm().targetDate"
+            (ngModelChange)="updateSavingsGoalForm('targetDate', $event)"
+            [disabled]="savingsGoalSaving()"
+          >
+        </label>
+        <fieldset class="goal-category-picker">
+          <legend>Categoria</legend>
+          <label
+            class="goal-category-choice"
+            *ngFor="let category of savingsGoalCategories"
+            [class.selected]="savingsGoalForm().category === category"
+            [ngClass]="savingsGoalCategoryClass(category)"
+          >
+            <input
+              type="radio"
+              name="savings-goal-category"
+              [ngModel]="savingsGoalForm().category"
+              (ngModelChange)="updateSavingsGoalForm('category', $event)"
+              [value]="category"
+              [disabled]="savingsGoalSaving()"
+              required
+            >
+            <span class="goal-category-mark">{{ savingsGoalCategoryShortCode(category) }}</span>
+            <span>{{ savingsGoalCategoryLabel(category) }}</span>
+          </label>
+        </fieldset>
+        <label>
+          Estado
+          <select
+            name="savings-goal-status"
+            [ngModel]="savingsGoalForm().status"
+            (ngModelChange)="updateSavingsGoalForm('status', $event)"
+            [disabled]="savingsGoalSaving()"
+          >
+            <option *ngFor="let status of savingsGoalStatuses" [value]="status">
+              {{ savingsGoalStatusLabel(status) }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Ahorro mensual
+          <input
+            type="number"
+            name="savings-goal-monthly-rate"
+            min="0"
+            step="0.01"
+            [ngModel]="savingsGoalForm().monthlySavingRate"
+            (ngModelChange)="updateSavingsGoalForm('monthlySavingRate', $event)"
+            [disabled]="savingsGoalSaving()"
+          >
+        </label>
+        <label>
+          Notas
+          <input
+            type="text"
+            name="savings-goal-notes"
+            [ngModel]="savingsGoalForm().notes"
+            (ngModelChange)="updateSavingsGoalForm('notes', $event)"
+            [disabled]="savingsGoalSaving()"
+          >
+        </label>
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" [disabled]="savingsGoalSaving()">
+          {{ isEditingSavingsGoal() ? 'Guardar cambios' : 'Crear objetivo' }}
+        </button>
+        <button
+          *ngIf="isEditingSavingsGoal()"
+          type="button"
+          class="secondary-button"
+          (click)="cancelSavingsGoalEdit()"
+          [disabled]="savingsGoalSaving()"
+        >
+          Cancelar
+        </button>
+        <button type="button" class="secondary-button" (click)="loadSavingsGoals()" [disabled]="savingsGoalsLoading() || savingsGoalSaving()">
+          Actualizar lista
+        </button>
+      </div>
+    </form>
+
+    <table *ngIf="!savingsGoalsLoading() && savingsGoals().length > 0">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Objetivo</th>
+          <th>Ahorrado</th>
+          <th>Restante</th>
+          <th>Progreso</th>
+          <th>Categoria</th>
+          <th>Estado</th>
+          <th>ETA</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let savingsGoal of savingsGoals(); trackBy: trackSavingsGoal">
+          <td>{{ savingsGoal.name }}</td>
+          <td>{{ savingsGoal.targetAmount | currency:'EUR':'symbol':'1.2-2' }}</td>
+          <td>{{ savingsGoal.currentAmount | currency:'EUR':'symbol':'1.2-2' }}</td>
+          <td>{{ savingsGoal.remainingAmount | currency:'EUR':'symbol':'1.2-2' }}</td>
+          <td class="progress-cell">
+            <div class="goal-progress-track" aria-hidden="true">
+              <div class="goal-progress-fill" [style.width.%]="savingsGoal.progressPercentage"></div>
+            </div>
+            <span>{{ savingsGoal.progressPercentage | number:'1.2-2' }}%</span>
+          </td>
+          <td>
+            <span class="goal-category-pill" [ngClass]="savingsGoalCategoryClass(savingsGoal.category)">
+              <span class="goal-category-mark">{{ savingsGoalCategoryShortCode(savingsGoal.category) }}</span>
+              {{ savingsGoalCategoryLabel(savingsGoal.category) }}
+            </span>
+          </td>
+          <td>
+            <span class="status-pill" [ngClass]="savingsGoalStatusClass(savingsGoal.status)">
+              {{ savingsGoalStatusLabel(savingsGoal.status) }}
+            </span>
+          </td>
+          <td>{{ savingsGoal.estimatedCompletionDate || '-' }}</td>
+          <td class="row-actions">
+            <button type="button" class="secondary-button" (click)="editSavingsGoal(savingsGoal)" [disabled]="savingsGoalSaving()">
+              Editar
+            </button>
+            <button type="button" class="danger-button" (click)="deleteSavingsGoal(savingsGoal)" [disabled]="savingsGoalSaving()">
+              Eliminar
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p *ngIf="!savingsGoalsLoading() && savingsGoals().length === 0" class="empty-state">
+      No hay objetivos de ahorro registrados.
+    </p>
+  </section>
+
   <section class="section transaction-section">
     <div class="section-header">
       <h2>Nuevo gasto</h2>

@@ -31,6 +31,17 @@ export type FinancialHealthStatus = 'GOOD' | 'WARNING' | 'BAD' | 'NO_DATA';
 
 export type ObligationPaymentStatus = 'PENDING' | 'PAID_OR_REGISTERED';
 
+export type SavingsGoalCategory =
+  | 'EMERGENCY_FUND'
+  | 'TRAVEL'
+  | 'ELECTRONICS'
+  | 'CAR'
+  | 'HOME'
+  | 'EDUCATION'
+  | 'OTHER';
+
+export type SavingsGoalStatus = 'ACTIVE' | 'COMPLETED' | 'PAUSED' | 'CANCELLED';
+
 export interface Expense {
   id: number;
   concept: string;
@@ -127,4 +138,41 @@ export interface MonthlyObligationsSummary {
   paidOrRegisteredObligations: number;
   realAvailableMoney: number;
   upcomingPayments: UpcomingPayment[];
+}
+
+export interface SavingsGoalRequest {
+  name: string;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate?: string | null;
+  category: SavingsGoalCategory;
+  status: SavingsGoalStatus;
+  monthlySavingRate?: number | null;
+  notes?: string | null;
+}
+
+export interface SavingsGoal extends SavingsGoalRequest {
+  id: number;
+  remainingAmount: number;
+  progressPercentage: number;
+  monthlySavingRate: number;
+  estimatedMonthsToCompletion?: number | null;
+  estimatedCompletionDate?: string | null;
+  createdAt: string;
+}
+
+export interface SavingsGoalSummary {
+  totalGoals: number;
+  activeGoals: number;
+  completedGoals: number;
+  pausedGoals: number;
+  cancelledGoals: number;
+  totalTargetAmount: number;
+  totalCurrentAmount: number;
+  totalRemainingAmount: number;
+  overallProgressPercentage: number;
+  monthlySavingRate: number;
+  estimatedMonthsToCompletion?: number | null;
+  estimatedCompletionDate?: string | null;
+  nearestGoalToComplete?: SavingsGoal | null;
 }
