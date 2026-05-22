@@ -4,6 +4,9 @@ import { Observable } from 'rxjs';
 
 import { environment } from '../../../../environments/environment';
 import {
+  Budget,
+  BudgetRequest,
+  BudgetSummary,
   Expense,
   ExpenseCategory,
   ExpenseRequest,
@@ -73,6 +76,32 @@ export class FinanceService {
   getMonthlyObligationsSummary(month: string): Observable<MonthlyObligationsSummary> {
     const params = new HttpParams().set('month', month);
     return this.http.get<MonthlyObligationsSummary>(`${this.baseUrl}/obligations/monthly-summary`, { params });
+  }
+
+  getBudgets(month: string): Observable<Budget[]> {
+    const params = new HttpParams().set('month', month);
+    return this.http.get<Budget[]>(`${this.baseUrl}/budgets`, { params });
+  }
+
+  getBudget(id: number): Observable<Budget> {
+    return this.http.get<Budget>(`${this.baseUrl}/budgets/${id}`);
+  }
+
+  createBudget(request: BudgetRequest): Observable<Budget> {
+    return this.http.post<Budget>(`${this.baseUrl}/budgets`, request);
+  }
+
+  updateBudget(id: number, request: BudgetRequest): Observable<Budget> {
+    return this.http.put<Budget>(`${this.baseUrl}/budgets/${id}`, request);
+  }
+
+  deleteBudget(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/budgets/${id}`);
+  }
+
+  getBudgetSummary(month: string): Observable<BudgetSummary> {
+    const params = new HttpParams().set('month', month);
+    return this.http.get<BudgetSummary>(`${this.baseUrl}/budgets/summary`, { params });
   }
 
   getSavingsGoals(): Observable<SavingsGoal[]> {

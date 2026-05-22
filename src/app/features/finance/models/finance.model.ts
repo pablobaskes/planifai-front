@@ -31,6 +31,10 @@ export type FinancialHealthStatus = 'GOOD' | 'WARNING' | 'BAD' | 'NO_DATA';
 
 export type ObligationPaymentStatus = 'PENDING' | 'PAID_OR_REGISTERED';
 
+export type BudgetStatus = 'OK' | 'WARNING' | 'EXCEEDED';
+
+export type BudgetAlertType = 'APPROACHING_LIMIT' | 'BUDGET_EXCEEDED';
+
 export type SavingsGoalCategory =
   | 'EMERGENCY_FUND'
   | 'TRAVEL'
@@ -138,6 +142,57 @@ export interface MonthlyObligationsSummary {
   paidOrRegisteredObligations: number;
   realAvailableMoney: number;
   upcomingPayments: UpcomingPayment[];
+}
+
+export interface BudgetRequest {
+  month: string;
+  category: FinanceCategory;
+  limitAmount: number;
+  active: boolean;
+  notes?: string | null;
+}
+
+export interface BudgetAlert {
+  type: BudgetAlertType;
+  category: FinanceCategory;
+  message: string;
+  limitAmount: number;
+  consumedAmount: number;
+  threshold: number;
+}
+
+export interface Budget extends BudgetRequest {
+  id: number;
+  consumedAmount: number;
+  remainingAmount: number;
+  overspentAmount: number;
+  consumptionPercentage: number;
+  status: BudgetStatus;
+  alerts: BudgetAlert[];
+}
+
+export interface BudgetCategoryStatus {
+  budgetId?: number | null;
+  category: FinanceCategory;
+  limitAmount: number;
+  consumedAmount: number;
+  remainingAmount: number;
+  overspentAmount: number;
+  consumptionPercentage: number;
+  status: BudgetStatus;
+  alerts: BudgetAlert[];
+}
+
+export interface BudgetSummary {
+  month: string;
+  totalLimitAmount: number;
+  totalConsumedAmount: number;
+  totalRemainingAmount: number;
+  totalOverspentAmount: number;
+  overallConsumptionPercentage: number;
+  status: BudgetStatus;
+  categories: BudgetCategoryStatus[];
+  alerts: BudgetAlert[];
 }
 
 export interface SavingsGoalRequest {
