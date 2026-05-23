@@ -15,7 +15,7 @@
       <button type="button" class="secondary-button" (click)="goToNextMonth()" [disabled]="loading()">
         Siguiente
       </button>
-      <button type="button" (click)="refreshFinance()" [disabled]="loading() || timelineLoading()">Actualizar</button>
+      <button type="button" (click)="refreshFinance()" [disabled]="loading() || timelineLoading() || cashflowLoading()">Actualizar</button>
     </div>
   </header>
 
@@ -53,6 +53,101 @@
   <p *ngIf="!loading() && !error() && isEmptyDashboard(dashboard())" class="empty-state">
     No hay datos financieros para {{ selectedMonth() }}. El dashboard muestra valores a cero.
   </p>
+
+  <section class="section cashflow-section">
+    <div class="section-header">
+      <h2>Cashflow proyectado</h2>
+      <span *ngIf="cashflow() as cashflowData">{{ cashflowData.from }} - {{ cashflowData.to }}</span>
+    </div>
+
+    <div class="cashflow-controls">
+      <label>
+        Desde
+        <input
+          type="month"
+          [value]="cashflowFrom()"
+          (change)="onCashflowFromChange($event)"
+          [disabled]="cashflowLoading()"
+        >
+      </label>
+      <label>
+        Hasta
+        <input
+          type="month"
+          [value]="cashflowTo()"
+          (change)="onCashflowToChange($event)"
+          [disabled]="cashflowLoading()"
+        >
+      </label>
+      <button type="button" class="secondary-button" (click)="loadCashflow()" [disabled]="cashflowLoading()">
+        Actualizar cashflow
+      </button>
+    </div>
+
+    <p *ngIf="cashflowError()" class="error">{{ cashflowError() }}</p>
+    <p *ngIf="cashflowLoading()" class="loading">Cargando cashflow...</p>
+
+    <div *ngIf="!cashflowLoading() && !cashflowError() && cashflow() as cashflowData">
+      <div *ngIf="cashflowData.months.length > 0; else noCashflowMonths" class="cashflow-grid">
+        <article
+          class="cashflow-card"
+          *ngFor="let month of cashflowData.months; trackBy: trackCashflowMonth"
+          [ngClass]="cashflowStatusClass(month)"
+        >
+          <div class="cashflow-card-header">
+            <h3>{{ month.month }}</h3>
+            <span class="status-pill" [ngClass]="cashflowStatusClass(month)">
+              {{ cashflowStatusLabel(month) }}
+            </span>
+          </div>
+
+          <div class="cashflow-balance" [ngClass]="cashflowAmountClass(month.projectedBalance)">
+            <span>Balance proyectado</span>
+            <strong>{{ month.projectedBalance | currency:'EUR':'symbol':'1.2-2' }}</strong>
+          </div>
+
+          <div class="cashflow-bars">
+            <div class="cashflow-bar-row">
+              <div>
+                <span>Ingresos esperados</span>
+                <strong>{{ month.expectedIncome | currency:'EUR':'symbol':'1.2-2' }}</strong>
+              </div>
+              <div class="cashflow-track" aria-hidden="true">
+                <div class="cashflow-fill income" [style.width.%]="cashflowBarWidth(month.expectedIncome, month)"></div>
+              </div>
+            </div>
+
+            <div class="cashflow-bar-row">
+              <div>
+                <span>Gastos esperados</span>
+                <strong>{{ month.expectedExpenses | currency:'EUR':'symbol':'1.2-2' }}</strong>
+              </div>
+              <div class="cashflow-track" aria-hidden="true">
+                <div class="cashflow-fill expense" [style.width.%]="cashflowBarWidth(month.expectedExpenses, month)"></div>
+              </div>
+            </div>
+          </div>
+
+          <dl class="cashflow-metrics">
+            <div>
+              <dt>Net cashflow</dt>
+              <dd [ngClass]="cashflowAmountClass(month.netCashflow)">
+                {{ month.netCashflow | currency:'EUR':'symbol':'1.2-2' }}
+              </dd>
+            </div>
+            <div>
+              <dt>Tasa ahorro</dt>
+              <dd>{{ month.savingsRate | number:'1.2-2' }}%</dd>
+            </div>
+          </dl>
+        </article>
+      </div>
+
+      <ng-template #noCashflowMonths>
+        <p class="empty-state">No hay meses de cashflow entre {{ cashflowData.from }} y {{ cashflowData.to }}.</p>
+      </ng-template>
+    </div>
+  </section>
 
   <section class="section timeline-section">
     <div class="section-header">

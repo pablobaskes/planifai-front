@@ -151,6 +151,11 @@
   padding-top: 24px;
 }
 
+.cashflow-section {
+  border-top: 1px solid #d8dee4;
+  padding-top: 24px;
+}
+
 .obligations-dashboard {
   margin-top: 16px;
 }
@@ -489,6 +494,158 @@
   margin: 8px 0 0;
 }
 
+.cashflow-controls {
+  align-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cashflow-controls label {
+  color: #57606a;
+  display: grid;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.cashflow-controls input {
+  border: 1px solid #c9d1d9;
+  border-radius: 6px;
+  font: inherit;
+  min-height: 40px;
+  padding: 8px 10px;
+}
+
+.cashflow-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  margin-top: 16px;
+}
+
+.cashflow-card {
+  background: #ffffff;
+  border: 1px solid #d8dee4;
+  border-left: 6px solid #8c959f;
+  border-radius: 8px;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.cashflow-card.cashflow-positive {
+  border-left-color: #1a7f37;
+}
+
+.cashflow-card.cashflow-negative {
+  border-left-color: #cf222e;
+}
+
+.cashflow-card-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.cashflow-card-header h3 {
+  margin: 0;
+}
+
+.cashflow-balance {
+  background: #f6f8fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.cashflow-balance span,
+.cashflow-bar-row span,
+.cashflow-metrics dt {
+  color: #57606a;
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.cashflow-balance strong {
+  display: block;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  margin-top: 6px;
+}
+
+.cashflow-balance.positive strong,
+.cashflow-metrics dd.positive {
+  color: #1a7f37;
+}
+
+.cashflow-balance.negative strong,
+.cashflow-metrics dd.negative {
+  color: #b91c1c;
+}
+
+.cashflow-balance.neutral strong,
+.cashflow-metrics dd.neutral {
+  color: #57606a;
+}
+
+.cashflow-bars {
+  display: grid;
+  gap: 12px;
+}
+
+.cashflow-bar-row {
+  display: grid;
+  gap: 8px;
+}
+
+.cashflow-bar-row strong {
+  color: #1f2328;
+  display: block;
+  margin-top: 3px;
+}
+
+.cashflow-track {
+  background: #eaeef2;
+  border-radius: 999px;
+  height: 10px;
+  overflow: hidden;
+}
+
+.cashflow-fill {
+  border-radius: inherit;
+  height: 100%;
+  min-width: 2px;
+}
+
+.cashflow-fill.income {
+  background: #1a7f37;
+}
+
+.cashflow-fill.expense {
+  background: #cf222e;
+}
+
+.cashflow-metrics {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.cashflow-metrics div {
+  border-top: 1px solid #d8dee4;
+  padding-top: 10px;
+}
+
+.cashflow-metrics dd {
+  color: #1f2328;
+  font-weight: 800;
+  margin: 4px 0 0;
+}
+
 .timeline-controls {
   align-items: end;
   display: flex;
@@ -750,6 +907,24 @@ button:disabled {
   color: #b91c1c;
 }
 
+.status-pill.cashflow-positive {
+  background: #dafbe1;
+  border-color: #aceebb;
+  color: #1a7f37;
+}
+
+.status-pill.cashflow-negative {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #b91c1c;
+}
+
+.status-pill.cashflow-neutral {
+  background: #f6f8fa;
+  border-color: #d8dee4;
+  color: #57606a;
+}
+
 .status-pill.status-timeline-posted,
 .status-pill.status-timeline-completed {
   background: #dafbe1;
@@ -970,6 +1145,8 @@ th {
   .budget-category-main,
   .budget-category-metrics,
   .budget-alert div,
+  .cashflow-controls,
+  .cashflow-card-header,
   .timeline-controls,
   .timeline-main,
   .timeline-meta,
@@ -980,6 +1157,10 @@ th {
   }
 
   .timeline-event {
+    grid-template-columns: 1fr;
+  }
+
+  .cashflow-metrics {
     grid-template-columns: 1fr;
   }
 }

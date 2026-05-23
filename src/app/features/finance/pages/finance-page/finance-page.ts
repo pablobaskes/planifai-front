@@ -11,6 +11,8 @@ import {
   BudgetRequest,
   BudgetStatus,
   BudgetSummary,
+  CashflowMonth,
+  CashflowResponse,
   Expense,
   ExpenseCategory,
   ExpenseCategoryBreakdown,
@@ -91,6 +93,7 @@ export class FinancePage implements OnInit {
   protected readonly obligationsSummary = signal<MonthlyObligationsSummary | null>(null);
   protected readonly budgetSummary = signal<BudgetSummary | null>(null);
   protected readonly financialTimeline = signal<FinancialTimelineResponse | null>(null);
+  protected readonly cashflow = signal<CashflowResponse | null>(null);
   protected readonly budgets = signal<Budget[]>([]);
   protected readonly recurringExpenses = signal<RecurringExpense[]>([]);
   protected readonly savingsGoals = signal<SavingsGoal[]>([]);
@@ -98,8 +101,11 @@ export class FinancePage implements OnInit {
   protected readonly selectedMonth = signal(this.getCurrentMonth());
   protected readonly timelineFrom = signal(this.getMonthStartDate(this.selectedMonth()));
   protected readonly timelineTo = signal(this.getMonthEndDate(this.selectedMonth()));
+  protected readonly cashflowFrom = signal(this.selectedMonth());
+  protected readonly cashflowTo = signal(this.addMonths(this.selectedMonth(), 3));
   protected readonly loading = signal(false);
   protected readonly timelineLoading = signal(false);
+  protected readonly cashflowLoading = signal(false);
   protected readonly expenseSaving = signal(false);
   protected readonly recurringLoading = signal(false);
   protected readonly recurringSaving = signal(false);
@@ -108,6 +114,7 @@ export class FinancePage implements OnInit {
   protected readonly budgetSaving = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly timelineError = signal<string | null>(null);
+  protected readonly cashflowError = signal<string | null>(null);
   protected readonly expenseError = signal<string | null>(null);
   protected readonly recurringError = signal<string | null>(null);
   protected readonly savingsGoalError = signal<string | null>(null);
@@ -141,6 +148,7 @@ export class FinancePage implements OnInit {
   protected refreshFinance(): void {
     this.loadFinance();
     this.loadFinancialTimeline();
+    this.loadCashflow();
   }
 
   protected loadFinance(): void {
@@ -194,6 +202,27 @@ export class FinancePage implements OnInit {
           ),
         }),
         error: error => this.timelineError.set(this.resolveError(error, 'No se pudo cargar el timeline financiero.')),
+      });
+  }
+
+  protected loadCashflow(): void {
+    if (!this.isValidMonth(this.cashflowFrom()) || !this.isValidMonth(this.cashflowTo())) {
+      this.cashflowError.set('El rango de cashflow no es valido.');
+      return;
+    }
+    if (this.cashflowTo() < this.cashflowFrom()) {
+      this.cashflowError.set('El mes final de cashflow no puede ser anterior al mes inicial.');
+      return;
+    }
+
+    this.cashflowLoading.set(true);
+    this.cashflowError.set(null);
+
+    this.financeService.getCashflow(this.cashflowFrom(), this.cashflowTo())
+      .pipe(finalize(() => this.cashflowLoading.set(false)))
+      .subscribe({
+        next: cashflow => this.cashflow.set(cashflow),
+        error: error => this.cashflowError.set(this.resolveError(error, 'No se pudo cargar el cashflow.')),
       });
   }
 
@@ -264,6 +293,10 @@ export class FinancePage implements OnInit {
     return `${event.id}-${event.date}-${index}`;
   }
 
+  protected trackCashflowMonth(_index: number, month: CashflowMonth): string {
+    return month.month;
+  }
+
   protected trackCategoryBreakdown(_index: number, breakdown: ExpenseCategoryBreakdown): string {
     return breakdown.category;
   }
@@ -290,6 +323,7 @@ export class FinancePage implements OnInit {
     this.selectedMonth.set(input.value);
     this.resetBudgetForm();
     this.resetTimelineRange();
+    this.resetCashflowRange();
     this.budgetError.set(null);
     this.refreshFinance();
   }
@@ -310,6 +344,24 @@ export class FinancePage implements OnInit {
       return;
     }
     this.timelineTo.set(input.value);
+  }
+
+  protected onCashflowFromChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!this.isValidMonth(input.value)) {
+      input.value = this.cashflowFrom();
+      return;
+    }
+    this.cashflowFrom.set(input.value);
+  }
+
+  protected onCashflowToChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!this.isValidMonth(input.value)) {
+      input.value = this.cashflowTo();
+      return;
+    }
+    this.cashflowTo.set(input.value);
   }
 
   protected goToPreviousMonth(): void {
@@ -461,6 +513,39 @@ export class FinancePage implements OnInit {
       return 'negative';
     }
     return 'neutral';
+  }
+
+  protected cashflowAmountClass(value: number): string {
+    if (value > 0) {
+      return 'positive';
+    }
+    if (value < 0) {
+      return 'negative';
+    }
+    return 'neutral';
+  }
+
+  protected cashflowStatusClass(month: CashflowMonth): string {
+    return `cashflow-${this.cashflowAmountClass(month.netCashflow)}`;
+  }
+
+  protected cashflowStatusLabel(month: CashflowMonth): string {
+    if (month.netCashflow > 0) {
+      return 'Positivo';
+    }
+    if (month.netCashflow < 0) {
+      return 'Negativo';
+    }
+    return 'Estable';
+  }
+
+  protected cashflowBarWidth(value: number, month: CashflowMonth): number {
+    const reference = Math.max(Math.abs(month.expectedIncome), Math.abs(month.expectedExpenses));
+    if (!Number.isFinite(value) || reference <= 0) {
+      return 0;
+    }
+
+    return Math.min(Math.abs(value) / reference * 100, 100);
   }
 
   protected savingsGoalCategoryLabel(category: SavingsGoalCategory): string {
@@ -1075,6 +1160,7 @@ export class FinancePage implements OnInit {
     this.selectedMonth.set(`${nextDate.getFullYear()}-${nextMonth}`);
     this.resetBudgetForm();
     this.resetTimelineRange();
+    this.resetCashflowRange();
     this.budgetError.set(null);
     this.refreshFinance();
   }
@@ -1093,6 +1179,12 @@ export class FinancePage implements OnInit {
     this.timelineError.set(null);
   }
 
+  private resetCashflowRange(): void {
+    this.cashflowFrom.set(this.selectedMonth());
+    this.cashflowTo.set(this.addMonths(this.selectedMonth(), 3));
+    this.cashflowError.set(null);
+  }
+
   private getMonthStartDate(month: string): string {
     return `${month}-01`;
   }
@@ -1102,6 +1194,13 @@ export class FinancePage implements OnInit {
     const endDate = new Date(year, monthNumber, 0);
     const day = String(endDate.getDate()).padStart(2, '0');
     return `${month}-${day}`;
+  }
+
+  private addMonths(month: string, offset: number): string {
+    const [year, monthNumber] = month.split('-').map(Number);
+    const nextDate = new Date(year, monthNumber - 1 + offset, 1);
+    const nextMonth = String(nextDate.getMonth() + 1).padStart(2, '0');
+    return `${nextDate.getFullYear()}-${nextMonth}`;
   }
 
   private hasActiveBudgetForCategory(category: ExpenseCategory, excludedId: number | null): boolean {
