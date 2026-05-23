@@ -1,0 +1,157 @@
+.receipt-page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 32px 24px 56px;
+  color: #172033;
+}
+
+.receipt-header {
+  margin-bottom: 24px;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  color: #0f766e;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 2rem;
+}
+
+h2 {
+  margin-bottom: 0;
+  font-size: 1.1rem;
+}
+
+.subtitle {
+  max-width: 680px;
+  margin-bottom: 0;
+  color: #526070;
+}
+
+.upload-panel,
+.result-panel {
+  border: 1px solid #d8dee4;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 20px;
+}
+
+.result-panel {
+  margin-top: 20px;
+}
+
+.panel-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.panel-heading p {
+  margin: 4px 0 0;
+  color: #5f6d7a;
+}
+
+.phase {
+  border: 1px solid #a7f3d0;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #047857;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.file-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.file-control {
+  display: grid;
+  gap: 6px;
+  color: #344256;
+  font-weight: 700;
+}
+
+input[type="file"] {
+  width: 100%;
+  border: 1px solid #c9d2dc;
+  border-radius: 6px;
+  padding: 9px;
+  background: #f8fafc;
+  color: #172033;
+}
+
+button {
+  min-height: 41px;
+  border: 0;
+  border-radius: 6px;
+  background: #0f766e;
+  color: #ffffff;
+  padding: 0 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+button:disabled {
+  background: #9aa8b7;
+  cursor: not-allowed;
+}
+
+.file-meta {
+  margin: 12px 0 0;
+  color: #526070;
+}
+
+.error-message {
+  margin: 14px 0 0;
+  border-left: 4px solid #dc2626;
+  background: #fef2f2;
+  color: #991b1b;
+  padding: 10px 12px;
+}
+
+pre {
+  min-height: 240px;
+  max-height: 520px;
+  margin: 0;
+  overflow: auto;
+  border: 1px solid #d8dee4;
+  border-radius: 6px;
+  background: #0f172a;
+  color: #e5e7eb;
+  padding: 16px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .receipt-page {
+    padding: 24px 16px 40px;
+  }
+
+  .file-row {
+    grid-template-columns: 1fr;
+  }
+
+  button {
+    width: 100%;
+  }
+}

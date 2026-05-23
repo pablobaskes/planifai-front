@@ -22,6 +22,11 @@ export const routes: Routes = [
       import('./features/finance/pages/finance-page/finance-page').then(m => m.FinancePage)
   },
   {
+    path: 'receipts/ocr',
+    loadComponent: () =>
+      import('./features/receipts/pages/receipt-ocr-page/receipt-ocr-page').then(m => m.ReceiptOcrPage)
+  },
+  {
     path: 'diet',
     loadChildren: () =>
       import('./features/diet/diet.routes').then(m => m.DIET_ROUTES)

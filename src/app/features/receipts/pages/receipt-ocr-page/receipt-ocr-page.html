@@ -1,0 +1,48 @@
+<main class="receipt-page">
+  <section class="receipt-header">
+    <div>
+      <p class="eyebrow">OCR de tickets</p>
+      <h1>Revision inicial de ticket</h1>
+      <p class="subtitle">Sube una imagen JPG o PNG para revisar el texto bruto extraido antes de aplicar cambios.</p>
+    </div>
+  </section>
+
+  <section class="upload-panel" aria-labelledby="receipt-upload-title">
+    <div class="panel-heading">
+      <h2 id="receipt-upload-title">Imagen del ticket</h2>
+      <span class="phase">PENDING_REVIEW</span>
+    </div>
+
+    <div class="file-row">
+      <label class="file-control">
+        <span>Archivo</span>
+        <input type="file" accept="image/jpeg,image/png" (change)="onFileSelected($event)" />
+      </label>
+
+      <button type="button" (click)="upload()" [disabled]="loading() || !selectedFile()">
+        {{ loading() ? 'Subiendo...' : 'Extraer texto' }}
+      </button>
+    </div>
+
+    @if (selectedFile()) {
+      <p class="file-meta">{{ selectedFile()?.name }} · {{ selectedFile()?.size | number }} bytes</p>
+    }
+
+    @if (error()) {
+      <p class="error-message" role="alert">{{ error() }}</p>
+    }
+  </section>
+
+  @if (result()) {
+    <section class="result-panel" aria-labelledby="receipt-result-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="receipt-result-title">Texto extraido</h2>
+          <p>Receipt #{{ result()?.receiptId }} · {{ result()?.status }} · {{ result()?.ocrProvider }}</p>
+        </div>
+      </div>
+
+      <pre>{{ result()?.rawText }}</pre>
+    </section>
+  }
+</main>
