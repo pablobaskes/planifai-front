@@ -43,6 +43,126 @@
       </div>
 
       <pre>{{ result()?.rawText }}</pre>
+
+      <div class="parse-actions">
+        <button type="button" (click)="parseReceipt()" [disabled]="parsing()">
+          {{ parsing() ? 'Interpretando...' : 'Interpretar lineas' }}
+        </button>
+        <span>Solo genera un borrador revisable; no aplica cambios reales.</span>
+      </div>
+
+      @if (parseError()) {
+        <p class="error-message" role="alert">{{ parseError() }}</p>
+      }
+    </section>
+  }
+
+  @if (draft()) {
+    <section class="draft-panel" aria-labelledby="receipt-draft-title">
+      <div class="panel-heading">
+        <div>
+          <h2 id="receipt-draft-title">Borrador de lineas</h2>
+          <p>Receipt #{{ draft()?.receiptId }} - {{ draft()?.status }}</p>
+        </div>
+      </div>
+
+      <p class="local-edit-note">
+        Puedes corregir este borrador en pantalla. Estos cambios aun no se guardan ni aplican inventario, compra o finanzas.
+      </p>
+
+      @if (draft()?.lines?.length) {
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre OCR</th>
+                <th>Cantidad</th>
+                <th>Unidad</th>
+                <th>Precio unitario</th>
+                <th>Total linea</th>
+                <th>Confianza</th>
+                <th>Revision</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (line of draft()?.lines; track line.id) {
+                <tr [class.needs-review]="line.needsReview" [class.low-confidence]="isLowConfidence(line)">
+                  <td>
+                    <input
+                      class="line-input name-input"
+                      type="text"
+                      [value]="line.rawName"
+                      (input)="updateTextLine(line.id, 'rawName', $event)"
+                      aria-label="Nombre OCR"
+                    />
+                    <span>{{ line.rawLine }}</span>
+                  </td>
+                  <td>
+                    <input
+                      class="line-input number-input"
+                      type="number"
+                      step="0.001"
+                      [value]="line.quantity ?? ''"
+                      (input)="updateNumberLine(line.id, 'quantity', $event)"
+                      aria-label="Cantidad"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      class="line-input unit-input"
+                      type="text"
+                      [value]="line.unit ?? ''"
+                      (input)="updateTextLine(line.id, 'unit', $event)"
+                      aria-label="Unidad"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      class="line-input number-input"
+                      type="number"
+                      step="0.01"
+                      [value]="line.unitPrice ?? ''"
+                      (input)="updateNumberLine(line.id, 'unitPrice', $event)"
+                      aria-label="Precio unitario"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      class="line-input number-input"
+                      type="number"
+                      step="0.01"
+                      [value]="line.lineTotal ?? ''"
+                      (input)="updateNumberLine(line.id, 'lineTotal', $event)"
+                      aria-label="Total linea"
+                    />
+                  </td>
+                  <td>
+                    <span class="confidence" [class.confidence-low]="isLowConfidence(line)">
+                      {{ formatConfidence(line.confidence) }}
+                    </span>
+                  </td>
+                  <td>{{ line.needsReview || isLowConfidence(line) ? 'Si' : 'No' }}</td>
+                  <td>
+                    <select
+                      class="status-select"
+                      [value]="line.status"
+                      (change)="updateLineStatus(line.id, $event)"
+                      aria-label="Estado de linea"
+                    >
+                      @for (status of lineStatuses; track status) {
+                        <option [value]="status">{{ status }}</option>
+                      }
+                    </select>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      } @else {
+        <p class="empty-state">No se detectaron lineas utiles. El ticket sigue disponible para revision manual.</p>
+      }
     </section>
   }
 </main>

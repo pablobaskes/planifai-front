@@ -41,14 +41,16 @@ h2 {
 }
 
 .upload-panel,
-.result-panel {
+.result-panel,
+.draft-panel {
   border: 1px solid #d8dee4;
   border-radius: 8px;
   background: #ffffff;
   padding: 20px;
 }
 
-.result-panel {
+.result-panel,
+.draft-panel {
   margin-top: 20px;
 }
 
@@ -115,6 +117,18 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.parse-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.parse-actions span {
+  color: #526070;
+  font-size: 0.92rem;
+}
+
 .file-meta {
   margin: 12px 0 0;
   color: #526070;
@@ -142,6 +156,113 @@ pre {
   word-break: break-word;
 }
 
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th,
+td {
+  border-bottom: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: #344256;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+td strong,
+td span {
+  display: block;
+}
+
+td span {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+tr.needs-review {
+  background: #fffbeb;
+}
+
+.low-confidence {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+.local-edit-note {
+  margin: 0 0 14px;
+  border-left: 4px solid #0f766e;
+  background: #f0fdfa;
+  color: #115e59;
+  padding: 10px 12px;
+}
+
+.line-input,
+.status-select {
+  width: 100%;
+  min-height: 34px;
+  border: 1px solid #c9d2dc;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172033;
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.name-input {
+  min-width: 180px;
+  font-weight: 700;
+}
+
+.number-input {
+  min-width: 96px;
+}
+
+.unit-input {
+  min-width: 72px;
+}
+
+.status-select {
+  min-width: 142px;
+}
+
+.confidence,
+.line-status {
+  display: inline-block;
+  border: 1px solid #c9d2dc;
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #344256;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.confidence-low {
+  border-color: #f59e0b;
+  background: #fffbeb;
+  color: #92400e;
+}
+
+.empty-state {
+  margin: 0;
+  border: 1px dashed #c9d2dc;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #526070;
+  padding: 14px;
+}
+
 @media (max-width: 640px) {
   .receipt-page {
     padding: 24px 16px 40px;
@@ -153,5 +274,10 @@ pre {
 
   button {
     width: 100%;
+  }
+
+  .parse-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
