@@ -18,6 +18,10 @@ import {
   FinanceCategoryOption,
   FinanceCategoryStatistics,
   FinanceDashboard,
+  FinancialTimelineEvent,
+  FinancialTimelineEventStatus,
+  FinancialTimelineEventType,
+  FinancialTimelineResponse,
   FinancialHealthStatus,
   Income,
   MonthlyObligationsSummary,
@@ -86,12 +90,16 @@ export class FinancePage implements OnInit {
   protected readonly categoryStatistics = signal<FinanceCategoryStatistics | null>(null);
   protected readonly obligationsSummary = signal<MonthlyObligationsSummary | null>(null);
   protected readonly budgetSummary = signal<BudgetSummary | null>(null);
+  protected readonly financialTimeline = signal<FinancialTimelineResponse | null>(null);
   protected readonly budgets = signal<Budget[]>([]);
   protected readonly recurringExpenses = signal<RecurringExpense[]>([]);
   protected readonly savingsGoals = signal<SavingsGoal[]>([]);
   protected readonly financeCategories = signal<FinanceCategoryOption[]>(this.getDefaultFinanceCategories());
   protected readonly selectedMonth = signal(this.getCurrentMonth());
+  protected readonly timelineFrom = signal(this.getMonthStartDate(this.selectedMonth()));
+  protected readonly timelineTo = signal(this.getMonthEndDate(this.selectedMonth()));
   protected readonly loading = signal(false);
+  protected readonly timelineLoading = signal(false);
   protected readonly expenseSaving = signal(false);
   protected readonly recurringLoading = signal(false);
   protected readonly recurringSaving = signal(false);
@@ -99,6 +107,7 @@ export class FinancePage implements OnInit {
   protected readonly savingsGoalSaving = signal(false);
   protected readonly budgetSaving = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly timelineError = signal<string | null>(null);
   protected readonly expenseError = signal<string | null>(null);
   protected readonly recurringError = signal<string | null>(null);
   protected readonly savingsGoalError = signal<string | null>(null);
@@ -124,9 +133,14 @@ export class FinancePage implements OnInit {
 
   ngOnInit(): void {
     this.loadFinanceCategories();
-    this.loadFinance();
+    this.refreshFinance();
     this.loadRecurringExpenses();
     this.loadSavingsGoals();
+  }
+
+  protected refreshFinance(): void {
+    this.loadFinance();
+    this.loadFinancialTimeline();
   }
 
   protected loadFinance(): void {
@@ -154,6 +168,32 @@ export class FinancePage implements OnInit {
           this.incomes.set(incomes);
         },
         error: error => this.error.set(this.resolveError(error)),
+      });
+  }
+
+  protected loadFinancialTimeline(): void {
+    if (!this.isValidDate(this.timelineFrom()) || !this.isValidDate(this.timelineTo())) {
+      this.timelineError.set('El rango del timeline no es valido.');
+      return;
+    }
+    if (this.timelineTo() < this.timelineFrom()) {
+      this.timelineError.set('La fecha final del timeline no puede ser anterior a la fecha inicial.');
+      return;
+    }
+
+    this.timelineLoading.set(true);
+    this.timelineError.set(null);
+
+    this.financeService.getFinancialTimeline(this.timelineFrom(), this.timelineTo())
+      .pipe(finalize(() => this.timelineLoading.set(false)))
+      .subscribe({
+        next: timeline => this.financialTimeline.set({
+          ...timeline,
+          events: [...timeline.events].sort((left, right) =>
+            left.date.localeCompare(right.date) || left.label.localeCompare(right.label),
+          ),
+        }),
+        error: error => this.timelineError.set(this.resolveError(error, 'No se pudo cargar el timeline financiero.')),
       });
   }
 
@@ -220,6 +260,10 @@ export class FinancePage implements OnInit {
     return `${alert.type}-${alert.category}-${index}`;
   }
 
+  protected trackTimelineEvent(index: number, event: FinancialTimelineEvent): string {
+    return `${event.id}-${event.date}-${index}`;
+  }
+
   protected trackCategoryBreakdown(_index: number, breakdown: ExpenseCategoryBreakdown): string {
     return breakdown.category;
   }
@@ -245,8 +289,27 @@ export class FinancePage implements OnInit {
 
     this.selectedMonth.set(input.value);
     this.resetBudgetForm();
+    this.resetTimelineRange();
     this.budgetError.set(null);
-    this.loadFinance();
+    this.refreshFinance();
+  }
+
+  protected onTimelineFromChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!this.isValidDate(input.value)) {
+      input.value = this.timelineFrom();
+      return;
+    }
+    this.timelineFrom.set(input.value);
+  }
+
+  protected onTimelineToChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!this.isValidDate(input.value)) {
+      input.value = this.timelineTo();
+      return;
+    }
+    this.timelineTo.set(input.value);
   }
 
   protected goToPreviousMonth(): void {
@@ -354,6 +417,52 @@ export class FinancePage implements OnInit {
     return Math.min(percentage, 100);
   }
 
+  protected timelineEventTypeLabel(type: FinancialTimelineEventType): string {
+    const labels: Record<FinancialTimelineEventType, string> = {
+      INCOME: 'Ingreso',
+      EXPENSE: 'Gasto',
+      RECURRING_EXPENSE: 'Recurrente',
+      SAVINGS_GOAL: 'Objetivo',
+      BUDGET_ALERT: 'Alerta',
+    };
+
+    return labels[type];
+  }
+
+  protected timelineEventStatusLabel(status: FinancialTimelineEventStatus): string {
+    const labels: Record<FinancialTimelineEventStatus, string> = {
+      POSTED: 'Real',
+      PROJECTED: 'Proyectado',
+      PENDING: 'Pendiente',
+      COMPLETED: 'Completado',
+      ALERT: 'Alerta',
+    };
+
+    return labels[status];
+  }
+
+  protected timelineEventTypeClass(type: FinancialTimelineEventType): string {
+    return `timeline-type-${type.toLowerCase().replace(/_/g, '-')}`;
+  }
+
+  protected timelineEventStatusClass(status: FinancialTimelineEventStatus): string {
+    return `status-timeline-${status.toLowerCase().replace(/_/g, '-')}`;
+  }
+
+  protected timelineProjectionLabel(event: FinancialTimelineEvent): string {
+    return event.projected ? 'Proyectado' : 'Real';
+  }
+
+  protected timelineAmountClass(event: FinancialTimelineEvent): string {
+    if (event.amount > 0) {
+      return 'positive';
+    }
+    if (event.amount < 0) {
+      return 'negative';
+    }
+    return 'neutral';
+  }
+
   protected savingsGoalCategoryLabel(category: SavingsGoalCategory): string {
     const labels: Record<SavingsGoalCategory, string> = {
       EMERGENCY_FUND: 'Emergencia',
@@ -441,7 +550,7 @@ export class FinancePage implements OnInit {
         next: expense => {
           this.expenses.update(expenses => [...expenses, expense]);
           this.resetExpenseForm();
-          this.loadFinance();
+          this.refreshFinance();
         },
         error: error => this.expenseError.set(this.resolveError(error, 'No se pudo guardar el gasto.')),
       });
@@ -473,7 +582,7 @@ export class FinancePage implements OnInit {
             ));
           }
           this.resetRecurringForm();
-          this.loadFinance();
+          this.refreshFinance();
         },
         error: error => this.recurringError.set(this.resolveError(error, 'No se pudo guardar el gasto recurrente.')),
       });
@@ -536,7 +645,7 @@ export class FinancePage implements OnInit {
             ));
           }
           this.resetBudgetForm();
-          this.loadFinance();
+          this.refreshFinance();
         },
         error: error => this.budgetError.set(this.resolveError(error, 'No se pudo guardar el presupuesto.')),
       });
@@ -610,7 +719,7 @@ export class FinancePage implements OnInit {
           if (this.editingRecurringExpenseId() === recurringExpense.id) {
             this.resetRecurringForm();
           }
-          this.loadFinance();
+          this.refreshFinance();
         },
         error: error => this.recurringError.set(this.resolveError(error, 'No se pudo eliminar el gasto recurrente.')),
       });
@@ -649,7 +758,7 @@ export class FinancePage implements OnInit {
           if (this.editingBudgetId() === budget.id) {
             this.resetBudgetForm();
           }
-          this.loadFinance();
+          this.refreshFinance();
         },
         error: error => this.budgetError.set(this.resolveError(error, 'No se pudo eliminar el presupuesto.')),
       });
@@ -965,12 +1074,34 @@ export class FinancePage implements OnInit {
     const nextMonth = String(nextDate.getMonth() + 1).padStart(2, '0');
     this.selectedMonth.set(`${nextDate.getFullYear()}-${nextMonth}`);
     this.resetBudgetForm();
+    this.resetTimelineRange();
     this.budgetError.set(null);
-    this.loadFinance();
+    this.refreshFinance();
   }
 
   private isValidMonth(value: string): boolean {
     return /^\d{4}-(0[1-9]|1[0-2])$/.test(value);
+  }
+
+  private isValidDate(value: string): boolean {
+    return /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value);
+  }
+
+  private resetTimelineRange(): void {
+    this.timelineFrom.set(this.getMonthStartDate(this.selectedMonth()));
+    this.timelineTo.set(this.getMonthEndDate(this.selectedMonth()));
+    this.timelineError.set(null);
+  }
+
+  private getMonthStartDate(month: string): string {
+    return `${month}-01`;
+  }
+
+  private getMonthEndDate(month: string): string {
+    const [year, monthNumber] = month.split('-').map(Number);
+    const endDate = new Date(year, monthNumber, 0);
+    const day = String(endDate.getDate()).padStart(2, '0');
+    return `${month}-${day}`;
   }
 
   private hasActiveBudgetForCategory(category: ExpenseCategory, excludedId: number | null): boolean {

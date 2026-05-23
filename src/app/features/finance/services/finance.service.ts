@@ -7,12 +7,14 @@ import {
   Budget,
   BudgetRequest,
   BudgetSummary,
+  CashflowResponse,
   Expense,
   ExpenseCategory,
   ExpenseRequest,
   FinanceCategoryOption,
   FinanceCategoryStatistics,
   FinanceDashboard,
+  FinancialTimelineResponse,
   Income,
   MonthlyObligationsSummary,
   RecurringExpense,
@@ -45,6 +47,20 @@ export class FinanceService {
   getDashboard(month: string): Observable<FinanceDashboard> {
     const params = new HttpParams().set('month', month);
     return this.http.get<FinanceDashboard>(`${this.baseUrl}/dashboard`, { params });
+  }
+
+  getFinancialTimeline(from: string, to: string): Observable<FinancialTimelineResponse> {
+    const params = new HttpParams()
+      .set('from', from)
+      .set('to', to);
+    return this.http.get<FinancialTimelineResponse>(`${this.baseUrl}/timeline`, { params });
+  }
+
+  getCashflow(from: string, to: string): Observable<CashflowResponse> {
+    const params = new HttpParams()
+      .set('from', from)
+      .set('to', to);
+    return this.http.get<CashflowResponse>(`${this.baseUrl}/cashflow`, { params });
   }
 
   getFinanceCategories(): Observable<FinanceCategoryOption[]> {

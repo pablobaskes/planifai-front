@@ -15,7 +15,7 @@
       <button type="button" class="secondary-button" (click)="goToNextMonth()" [disabled]="loading()">
         Siguiente
       </button>
-      <button type="button" (click)="loadFinance()" [disabled]="loading()">Actualizar</button>
+      <button type="button" (click)="refreshFinance()" [disabled]="loading() || timelineLoading()">Actualizar</button>
     </div>
   </header>
 
@@ -53,6 +53,82 @@
   <p *ngIf="!loading() && !error() && isEmptyDashboard(dashboard())" class="empty-state">
     No hay datos financieros para {{ selectedMonth() }}. El dashboard muestra valores a cero.
   </p>
+
+  <section class="section timeline-section">
+    <div class="section-header">
+      <h2>Timeline financiero</h2>
+      <span *ngIf="financialTimeline() as timeline">{{ timeline.from }} - {{ timeline.to }}</span>
+    </div>
+
+    <div class="timeline-controls">
+      <label>
+        Desde
+        <input
+          type="date"
+          [value]="timelineFrom()"
+          (change)="onTimelineFromChange($event)"
+          [disabled]="timelineLoading()"
+        >
+      </label>
+      <label>
+        Hasta
+        <input
+          type="date"
+          [value]="timelineTo()"
+          (change)="onTimelineToChange($event)"
+          [disabled]="timelineLoading()"
+        >
+      </label>
+      <button type="button" class="secondary-button" (click)="loadFinancialTimeline()" [disabled]="timelineLoading()">
+        Actualizar timeline
+      </button>
+    </div>
+
+    <p *ngIf="timelineError()" class="error">{{ timelineError() }}</p>
+    <p *ngIf="timelineLoading()" class="loading">Cargando timeline financiero...</p>
+
+    <div *ngIf="!timelineLoading() && !timelineError() && financialTimeline() as timeline">
+      <div *ngIf="timeline.events.length > 0; else noTimelineEvents" class="timeline-list">
+        <article
+          class="timeline-event"
+          *ngFor="let event of timeline.events; trackBy: trackTimelineEvent"
+          [ngClass]="[timelineEventTypeClass(event.type), event.projected ? 'timeline-projected' : 'timeline-real']"
+        >
+          <div class="timeline-date">
+            <strong>{{ event.date }}</strong>
+            <span>{{ timelineProjectionLabel(event) }}</span>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-main">
+              <div>
+                <strong>{{ event.label }}</strong>
+                <small>{{ event.source }}</small>
+              </div>
+              <strong class="timeline-amount" [ngClass]="timelineAmountClass(event)">
+                {{ event.amount | currency:'EUR':'symbol':'1.2-2' }}
+              </strong>
+            </div>
+            <div class="timeline-meta">
+              <span class="status-pill" [ngClass]="timelineEventStatusClass(event.status)">
+                {{ timelineEventStatusLabel(event.status) }}
+              </span>
+              <span class="timeline-type-pill" [ngClass]="timelineEventTypeClass(event.type)">
+                {{ timelineEventTypeLabel(event.type) }}
+              </span>
+              <span *ngIf="event.category as eventCategory" class="category-pill" [ngClass]="categoryClass(eventCategory)">
+                <span class="category-mark">{{ categoryShortCode(eventCategory) }}</span>
+                {{ categoryLabel(eventCategory) }}
+              </span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <ng-template #noTimelineEvents>
+        <p class="empty-state">No hay eventos financieros entre {{ timeline.from }} y {{ timeline.to }}.</p>
+      </ng-template>
+    </div>
+  </section>
 
   <section class="section obligations-section" *ngIf="!loading() && obligationsSummary() as summary">
     <div class="section-header">

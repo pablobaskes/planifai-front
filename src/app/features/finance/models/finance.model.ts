@@ -35,6 +35,15 @@ export type BudgetStatus = 'OK' | 'WARNING' | 'EXCEEDED';
 
 export type BudgetAlertType = 'APPROACHING_LIMIT' | 'BUDGET_EXCEEDED';
 
+export type FinancialTimelineEventType =
+  | 'INCOME'
+  | 'EXPENSE'
+  | 'RECURRING_EXPENSE'
+  | 'SAVINGS_GOAL'
+  | 'BUDGET_ALERT';
+
+export type FinancialTimelineEventStatus = 'POSTED' | 'PROJECTED' | 'PENDING' | 'COMPLETED' | 'ALERT';
+
 export type SavingsGoalCategory =
   | 'EMERGENCY_FUND'
   | 'TRAVEL'
@@ -193,6 +202,40 @@ export interface BudgetSummary {
   status: BudgetStatus;
   categories: BudgetCategoryStatus[];
   alerts: BudgetAlert[];
+}
+
+export interface FinancialTimelineEvent {
+  id: string;
+  date: string;
+  type: FinancialTimelineEventType;
+  label: string;
+  amount: number;
+  category?: FinanceCategory | null;
+  source: string;
+  projected: boolean;
+  status: FinancialTimelineEventStatus;
+}
+
+export interface FinancialTimelineResponse {
+  from: string;
+  to: string;
+  events: FinancialTimelineEvent[];
+}
+
+export interface CashflowMonth {
+  month: string;
+  expectedIncome: number;
+  expectedExpenses: number;
+  projectedBalance: number;
+  netCashflow: number;
+  savingsAmount: number;
+  savingsRate: number;
+}
+
+export interface CashflowResponse {
+  from: string;
+  to: string;
+  months: CashflowMonth[];
 }
 
 export interface SavingsGoalRequest {
